@@ -4,7 +4,9 @@
 #define MIDI 1
 // define delay in global loop
 #define LOOPDELAY 100
- 
+// uncomment to activate serial debug output
+//#define DEBUG
+
 #if KEYBOARD == 1
 #include "Keyboard.h"
 // set keyboard layout to de_DE
@@ -22,13 +24,13 @@
  *  MIDI { Pin number, 'M', MIDI channel, MIDI pitch, MIDI velocity
  */
 
-static char keyconfig [][5] = {{5, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Keyboard, press KEY_UP_ARROW
-                               {6, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6 Keyboard, press KEY_DOWN_ARROW
-                               {9, 'K', '+', 0, 0},            // Switch Pin 9 Keyboard, press +
-                               {10, 'K', '-', 0, 0},           // Switch Pin 10 Keyboard, press -
-                               {11, 'M', 0, 48, 64},           // Switch Pin 11 MIDI Note Channel 0, middle C, normal velocity
-                               {12, 'C', 1, 20, 127}           // Switch Pin 12 MIDI Control Channel 1, Control 20, Value 127
-                              };
+static char keyconfig[][5] = {{5, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Keyboard, press KEY_UP_ARROW
+                              {6, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6 Keyboard, press KEY_DOWN_ARROW
+                              {9, 'K', '+', 0, 0},            // Switch Pin 9 Keyboard, press +
+                              {10, 'K', '-', 0, 0},           // Switch Pin 10 Keyboard, press -
+                              {11, 'M', 0, 48, 64},           // Switch Pin 11 MIDI Note Channel 0, middle C, normal velocity
+                              {12, 'C', 1, 20, 127}           // Switch Pin 12 MIDI Control Channel 1, Control 20, Value 127
+                             };
 
 #if MIDI == 1
 // First parameter is the event type (0x09 = note on, 0x08 = note off).
@@ -62,16 +64,19 @@ char switchstate[30];
 
 void setup() {
   char count;
+#ifdef DEBUG
+  Serial.begin(115200);
+#endif
   // set pins to input and enable internal pullup; init switch state
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
     pinMode(keyconfig[count][0], INPUT_PULLUP);
     switchstate[count] == 0;
   }
-  #if KEYBOARD == 1
+#if KEYBOARD == 1
   // initialize Keyboard and set layout to de_DE
   Keyboard.begin(KeyboardLayout_de_DE);
-  #endif
+#endif
 }
 
 void loop() {
@@ -85,12 +90,24 @@ void loop() {
     if ((currentswitchstate == 0) and (switchstate[count] == 1))
     {
       // Switch pressed!
+#ifdef DEBUG
+      Serial.print("Pin: ");
+      Serial.print(keyconfig[count][0], DEC);
+      Serial.print(" Type: ");
+      Serial.print(keyconfig[count][1]);
+      Serial.print(" V1: ");
+      Serial.print(keyconfig[count][2], DEC);
+      Serial.print(" V2: ");
+      Serial.print(keyconfig[count][3], DEC);
+      Serial.print(" V3: ");
+      Serial.println(keyconfig[count][4], DEC);
+#endif
 #if KEYBOARD == 1
       // keyconfig element [1] contains type of config (K=Keyboard)
       if (keyconfig[count][1] == 'K')
       {
         // loop for 3 keys per pin (start at pin 2)
-        for (keycount = 2; sizeof(keyconfig[count]); keycount++)
+        for (keycount = 2; keycount < sizeof(keyconfig[count]); keycount++)
         {
           // key is configured, when its not 0
           if (keyconfig[count][keycount] != 0)
@@ -125,7 +142,7 @@ void loop() {
       if (keyconfig[count][1] == 'K')
       {
         // loop for 3 keys per pin (start at element 2)
-        for (keycount = 2; sizeof(keyconfig[count]); keycount++)
+        for (keycount = 2; keycount < sizeof(keyconfig[count]); keycount++)
         {
           // key is configured, when its not 0
           if (keyconfig[count][keycount] != 0)
