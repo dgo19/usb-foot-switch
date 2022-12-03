@@ -26,7 +26,8 @@ static char keyconfig [][5] = {{5, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 K
                                {6, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6 Keyboard, press KEY_DOWN_ARROW
                                {9, 'K', '+', 0, 0},            // Switch Pin 9 Keyboard, press +
                                {10, 'K', '-', 0, 0},           // Switch Pin 10 Keyboard, press -
-                               {11, 'M', 0, 48, 64}            // Switch Pin 11 MIDI Channel 0, middle C, normal velocity
+                               {11, 'M', 0, 48, 64},           // Switch Pin 11 MIDI Note Channel 0, middle C, normal velocity
+                               {12, 'C', 1, 20, 127}           // Switch Pin 12 MIDI Control Channel 1, Control 20, Value 127
                               };
 
 #if MIDI == 1
@@ -107,6 +108,12 @@ void loop() {
         // switch MIDI note on. [2]=channel, [3]=pitch, [4]=velocity
         noteOn(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
+      // keyconfig element [1] contains type of config (C=MIDI Control)
+      else if (keyconfig[count][1] == 'C')
+      {
+        // switch MIDI control on. [2]=channel, [3]=control, [4]=value
+        controlChange(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
 #endif
     }
     // switch has been released, when current state is 1 and was 0 before
@@ -135,6 +142,12 @@ void loop() {
       {
         // switch MIDI note off. [2]=channel, [3]=pitch, [4]=velocity
         noteOff(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
+      // keyconfig element [1] contains type of config (C=MIDI Control)
+      else if (keyconfig[count][1] == 'C')
+      {
+        // switch MIDI control off. [2]=channel, [3]=control, value 0=off
+        controlChange(keyconfig[count][2], keyconfig[count][3], 0);
       }
 #endif
     }
