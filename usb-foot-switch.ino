@@ -1,8 +1,13 @@
+// Keyboard support (enabled=1, disabled=0)
 #define KEYBOARD 1
-#define MIDI 0
-                          
+// MIDI support (enabled=1, disabled=0)
+#define MIDI 1
+// define delay in global loop
+#define LOOPDELAY 100
+ 
 #if KEYBOARD == 1
 #include "Keyboard.h"
+// set keyboard layout to de_DE
 #include "Keyboard_de_DE.h"
 #endif
 
@@ -10,27 +15,19 @@
 #include "MIDIUSB.h"
 #endif
 
-static const char pins[] = {2,   // Switch 0 Pin
-                            3,   // Switch 1 Pin
-                            4,   // Switch 2 Pin
-                            5,   // Switch 3 Pin
-                            6,   // Switch 4 Pin
-                            7,   // Switch 5 Pin
-                            8,   // Switch 6 Pin
-                            9,   // Switch 7 Pin
-                            10,  // Switch 8 Pin
-                            11}; // Switch 9 Pin
+/* Config for keys. Pins can be configured multiple times, to press multiple keys or midi commands
+ *  Keyboard { Pin number, 'K', 'Key1', 'Key2', 'Key3' }
+ *    set emtpy key fields to 0
+ *  or
+ *  MIDI { Pin number, 'M', MIDI channel, MIDI pitch, MIDI velocity
+ */
 
-static const char keys[] = {0,                 // Switch 0 Key
-                            0,                 // Switch 1 Key
-                            0,                 // Switch 2 Key
-                            KEY_UP_ARROW,      // Switch 3 Key
-                            KEY_DOWN_ARROW,    // Switch 4 Key
-                            0,                 // Switch 5 Key
-                            0,                 // Switch 6 Key
-                            '+',               // Switch 7 Key
-                            '-',               // Switch 8 Key
-                            0};                // Switch 9 Key
+static char keyconfig [][5] = {{5, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Keyboard, press KEY_UP_ARROW
+                               {6, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6 Keyboard, press KEY_DOWN_ARROW
+                               {9, 'K', '+', 0, 0},            // Switch Pin 9 Keyboard, press +
+                               {10, 'K', '-', 0, 0},           // Switch Pin 10 Keyboard, press -
+                               {11, 'M', 0, 48, 64}            // Switch Pin 11 MIDI Channel 0, middle C, normal velocity
+                              };
 
 #if MIDI == 1
 // First parameter is the event type (0x09 = note on, 0x08 = note off).
@@ -60,44 +57,90 @@ void controlChange(byte channel, byte control, byte value) {
 }
 #endif
 
-char switchstate[10];
+char switchstate[30];
 
 void setup() {
   char count;
   // set pins to input and enable internal pullup; init switch state
-  for (count=0; count < sizeof(pins); count++)
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
-    pinMode(pins[count], INPUT_PULLUP);
+    pinMode(keyconfig[count][0], INPUT_PULLUP);
     switchstate[count] == 0;
   }
   #if KEYBOARD == 1
+  // initialize Keyboard and set layout to de_DE
   Keyboard.begin(KeyboardLayout_de_DE);
   #endif
 }
 
 void loop() {
-  char count, currentswitchstate;
-  for (count=0; count < sizeof(pins); count++)
+  char count, keycount, currentswitchstate;
+  // loop for all configured keys
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
-    currentswitchstate = digitalRead(pins[count]);
+    // read current pin state. pin number is stored in element [0]
+    currentswitchstate = digitalRead(keyconfig[count][0]);
+    // switch has been pressed, when current state is 0 and was 1 before
     if ((currentswitchstate == 0) and (switchstate[count] == 1))
     {
       // Switch pressed!
-      if (keys[count] != 0)
+#if KEYBOARD == 1
+      // keyconfig element [1] contains type of config (K=Keyboard)
+      if (keyconfig[count][1] == 'K')
       {
-        Keyboard.press(keys[count]);
+        // loop for 3 keys per pin (start at pin 2)
+        for (keycount = 2; sizeof(keyconfig[count]); keycount++)
+        {
+          // key is configured, when its not 0
+          if (keyconfig[count][keycount] != 0)
+          {
+            // press the key on the keyboard
+            Keyboard.press(keyconfig[count][keycount]);
+          }
+        }
       }
+#endif
+#if MIDI == 1
+      // keyconfig element [1] contains type of config (M=MIDI)
+      if (keyconfig[count][1] == 'M')
+      {
+        // switch MIDI note on. [2]=channel, [3]=pitch, [4]=velocity
+        noteOn(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
+#endif
     }
+    // switch has been released, when current state is 1 and was 0 before
     else if ((currentswitchstate == 1) and (switchstate[count] == 0))
     {
       // Switch released!
-      if (keys[count] != 0)
+#if KEYBOARD == 1
+      // keyconfig element [1] contains type of config (K=Keyboard)
+      if (keyconfig[count][1] == 'K')
       {
-        Keyboard.release(keys[count]);
+        // loop for 3 keys per pin (start at element 2)
+        for (keycount = 2; sizeof(keyconfig[count]); keycount++)
+        {
+          // key is configured, when its not 0
+          if (keyconfig[count][keycount] != 0)
+          {
+            // release the key on the keyboard
+            Keyboard.release(keyconfig[count][keycount]);
+          }
+        }
       }
+#endif
+#if MIDI == 1
+      // keyconfig element [1] contains type of config (M=MIDI)
+      if (keyconfig[count][1] == 'M')
+      {
+        // switch MIDI note off. [2]=channel, [3]=pitch, [4]=velocity
+        noteOff(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
+#endif
     }
     // save state of switch
     switchstate[count] = currentswitchstate;
   }
-  delay(100);
+  // delay in milliseconds
+  delay(LOOPDELAY);
 }
