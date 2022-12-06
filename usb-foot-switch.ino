@@ -24,12 +24,12 @@
  *  MIDI { Pin number, 'M', MIDI channel, MIDI pitch, MIDI velocity
  */
 
-static char keyconfig[][5] = {{5, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Keyboard, press KEY_UP_ARROW
-                              {6, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6 Keyboard, press KEY_DOWN_ARROW
-                              {9, 'K', '+', 0, 0},            // Switch Pin 9 Keyboard, press +
-                              {10, 'K', '-', 0, 0},           // Switch Pin 10 Keyboard, press -
-                              {11, 'M', 0, 48, 64},           // Switch Pin 11 MIDI Note Channel 0, middle C, normal velocity
-                              {12, 'C', 1, 20, 127}           // Switch Pin 12 MIDI Control Channel 1, Control 20, Value 127
+static char keyconfig[][5] = {{2, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Keyboard, press KEY_UP_ARROW
+                              {3, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6 Keyboard, press KEY_DOWN_ARROW
+                              {4, 'K', '+', 0, 0},            // Switch Pin 9 Keyboard, press +
+                              {5, 'K', '-', 0, 0},            // Switch Pin 10 Keyboard, press -
+                              {6, 'M', 0, 48, 64},            // Switch Pin 11 MIDI Note Channel 0, middle C, normal velocity
+                              {7, 'C', 1, 20, 127}            // Switch Pin 12 MIDI Control Channel 1, Control 20, Value 127
                              };
 
 #if MIDI == 1
@@ -42,11 +42,13 @@ static char keyconfig[][5] = {{5, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Ke
 void noteOn(byte channel, byte pitch, byte velocity) {
   midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
   MidiUSB.sendMIDI(noteOn);
+  MidiUSB.flush();
 }
 
 void noteOff(byte channel, byte pitch, byte velocity) {
   midiEventPacket_t noteOff = {0x08, 0x80 | channel, pitch, velocity};
   MidiUSB.sendMIDI(noteOff);
+  MidiUSB.flush();
 }
 
 // First parameter is the event type (0x0B = control change).
@@ -57,6 +59,7 @@ void noteOff(byte channel, byte pitch, byte velocity) {
 void controlChange(byte channel, byte control, byte value) {
   midiEventPacket_t event = {0x0B, 0xB0 | channel, control, value};
   MidiUSB.sendMIDI(event);
+  MidiUSB.flush();
 }
 #endif
 
@@ -112,6 +115,10 @@ void loop() {
           // key is configured, when its not 0
           if (keyconfig[count][keycount] != 0)
           {
+#ifdef DEBUG
+            Serial.print("Keyboard: ");
+            Serial.println(keyconfig[count][keycount], DEC);
+#endif
             // press the key on the keyboard
             Keyboard.press(keyconfig[count][keycount]);
           }
@@ -122,12 +129,30 @@ void loop() {
       // keyconfig element [1] contains type of config (M=MIDI)
       if (keyconfig[count][1] == 'M')
       {
+#ifdef DEBUG
+        Serial.print("MIDI Note: ");
+        Serial.print(" Channel: ");
+        Serial.print(keyconfig[count][2], DEC);
+        Serial.print(" Pitch: ");
+        Serial.print(keyconfig[count][3], DEC);
+        Serial.print(" Velocity: ");
+        Serial.println(keyconfig[count][4], DEC);
+#endif
         // switch MIDI note on. [2]=channel, [3]=pitch, [4]=velocity
         noteOn(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
       // keyconfig element [1] contains type of config (C=MIDI Control)
       else if (keyconfig[count][1] == 'C')
       {
+#ifdef DEBUG
+        Serial.print("MIDI Control: ");
+        Serial.print(" Channel: ");
+        Serial.print(keyconfig[count][2], DEC);
+        Serial.print(" Control: ");
+        Serial.print(keyconfig[count][3], DEC);
+        Serial.print(" Value: ");
+        Serial.println(keyconfig[count][4], DEC);
+#endif
         // switch MIDI control on. [2]=channel, [3]=control, [4]=value
         controlChange(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
@@ -157,6 +182,15 @@ void loop() {
       // keyconfig element [1] contains type of config (M=MIDI)
       if (keyconfig[count][1] == 'M')
       {
+#ifdef DEBUG
+        Serial.print("MIDI Note release: ");
+        Serial.print(" Channel: ");
+        Serial.print(keyconfig[count][2], DEC);
+        Serial.print(" Pitch: ");
+        Serial.print(keyconfig[count][3], DEC);
+        Serial.print(" Velocity: ");
+        Serial.println(keyconfig[count][4], DEC);
+#endif
         // switch MIDI note off. [2]=channel, [3]=pitch, [4]=velocity
         noteOff(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
