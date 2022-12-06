@@ -4,6 +4,8 @@
 #define MIDI 1
 // define delay in global loop
 #define LOOPDELAY 100
+// send MIDI Control Value 0 on release
+#define MIDICRELEASE 0
 // uncomment to activate serial debug output
 //#define DEBUG
 
@@ -194,12 +196,14 @@ void loop() {
         // switch MIDI note off. [2]=channel, [3]=pitch, [4]=velocity
         noteOff(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
+#if MIDICRELEASE == 1
       // keyconfig element [1] contains type of config (C=MIDI Control)
       else if (keyconfig[count][1] == 'C')
       {
         // switch MIDI control off. [2]=channel, [3]=control, value 0=off
         controlChange(keyconfig[count][2], keyconfig[count][3], 0);
       }
+#endif
 #endif
     }
     // save state of switch
