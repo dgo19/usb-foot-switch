@@ -1,0 +1,21 @@
+# usb-foot-switch
+USB foot switch with keyboard and midi support
+## software setup in arduino ide
+![](01-arduino-start.png)  
+![](02-arduino-start.png)  
+![](03-arduino-start.png)  
+![](04-arduino-start.png)  
+![](05-arduino-start.png)  
+![](06-arduino-libraries.png)  
+![](07-arduino-libraries-keyboard.png)  
+![](08-arduino-libraries-keyboard.png)  
+![](09-arduino-libraries-midi.png)  
+![](10-arduino-libraries-midi.png)  
+![](11-save-sourcecode.png)  
+![](12-arduino-file.png)  
+![](13-arduino-open-file.png)  
+![](14-device-manager.png)  
+![](15-arduino-select-micro.png)  
+![](17-arduino-upload.png)  
+![](18-device-manager.png)  
+![](16-arduino-upload.png)  
