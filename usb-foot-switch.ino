@@ -1,5 +1,7 @@
 // Keyboard support (enabled=1, disabled=0)
 #define KEYBOARD 1
+// MIDI USB support (enabled=1, disabled=0)
+#define MIDIUSB 1
 // MIDI support (enabled=1, disabled=0)
 #define MIDI 1
 // define delay in global loop
@@ -15,7 +17,7 @@
 #include "Keyboard_de_DE.h"
 #endif
 
-#if MIDI == 1
+#if MIDIUSB == 1
 #include "MIDIUSB.h"
 #endif
 
@@ -30,24 +32,26 @@ static char keyconfig[][5] = {{2, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Ke
                               {3, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6 Keyboard, press KEY_DOWN_ARROW
                               {4, 'K', '+', 0, 0},            // Switch Pin 9 Keyboard, press +
                               {5, 'K', '-', 0, 0},            // Switch Pin 10 Keyboard, press -
-                              {6, 'M', 0, 48, 64},            // Switch Pin 11 MIDI Note Channel 0, middle C, normal velocity
-                              {7, 'C', 1, 20, 127}            // Switch Pin 12 MIDI Control Channel 1, Control 20, Value 127
+                              {6, 'M', 0, 48, 64},            // Switch Pin 11 MIDI USB Note Channel 1, middle C, normal velocity
+                              {7, 'C', 1, 20, 127},           // Switch Pin 12 MIDI USB Control Channel 2, Control 20, Value 127
+                              {6, 'm', 0, 48, 64},            // Switch Pin 11 MIDI Note Channel 1, middle C, normal velocity
+                              {7, 'c', 1, 20, 127}            // Switch Pin 12 MIDI Control Channel 2, Control 20, Value 127
                              };
 
-#if MIDI == 1
+#if MIDIUSB == 1
 // First parameter is the event type (0x09 = note on, 0x08 = note off).
 // Second parameter is note-on/note-off, combined with the channel.
 // Channel can be anything between 0-15. Typically reported to the user as 1-16.
 // Third parameter is the note number (48 = middle C).
 // Fourth parameter is the velocity (64 = normal, 127 = fastest).
 
-void noteOn(byte channel, byte pitch, byte velocity) {
+void noteOnUSB(byte channel, byte pitch, byte velocity) {
   midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
   MidiUSB.sendMIDI(noteOn);
   MidiUSB.flush();
 }
 
-void noteOff(byte channel, byte pitch, byte velocity) {
+void noteOffUSB(byte channel, byte pitch, byte velocity) {
   midiEventPacket_t noteOff = {0x08, 0x80 | channel, pitch, velocity};
   MidiUSB.sendMIDI(noteOff);
   MidiUSB.flush();
@@ -58,10 +62,44 @@ void noteOff(byte channel, byte pitch, byte velocity) {
 // Third parameter is the control number number (0-119).
 // Fourth parameter is the control value (0-127).
 
-void controlChange(byte channel, byte control, byte value) {
+void controlChangeUSB(byte channel, byte control, byte value) {
   midiEventPacket_t event = {0x0B, 0xB0 | channel, control, value};
   MidiUSB.sendMIDI(event);
   MidiUSB.flush();
+}
+#endif
+
+#if MIDI == 1
+// First parameter is the event type (0x09 = note on, 0x08 = note off).
+// Second parameter is note-on/note-off, combined with the channel.
+// Channel can be anything between 0-15. Typically reported to the user as 1-16.
+// Third parameter is the note number (48 = middle C).
+// Fourth parameter is the velocity (64 = normal, 127 = fastest).
+
+void noteOn(byte channel, byte pitch, byte velocity) {
+  Serial1.write(0x09);
+  Serial1.write(0x90 | channel);
+  Serial1.write(pitch);
+  Serial1.write(velocity);
+}
+
+void noteOff(byte channel, byte pitch, byte velocity) {
+  Serial1.write(0x08);
+  Serial1.write(0x80 | channel);
+  Serial1.write(pitch);
+  Serial1.write(velocity);
+}
+
+// First parameter is the event type (0x0B = control change).
+// Second parameter is the event type, combined with the channel.
+// Third parameter is the control number number (0-119).
+// Fourth parameter is the control value (0-127).
+
+void controlChange(byte channel, byte control, byte value) {
+  Serial.write(0x0B);
+  Serial1.write(0xB0 | channel);
+  Serial1.write(control);
+  Serial1.write(value};
 }
 #endif
 
@@ -81,6 +119,10 @@ void setup() {
 #if KEYBOARD == 1
   // initialize Keyboard and set layout to de_DE
   Keyboard.begin(KeyboardLayout_de_DE);
+#endif
+#if MIDI == 1
+  // initialize Serial1 for MIDI, 31250 baud
+  Serial1.begin(31250);
 #endif
 }
 
@@ -127,9 +169,41 @@ void loop() {
         }
       }
 #endif
-#if MIDI == 1
-      // keyconfig element [1] contains type of config (M=MIDI)
+#if MIDIUSB == 1
+      // keyconfig element [1] contains type of config (M=MIDI USB)
       if (keyconfig[count][1] == 'M')
+      {
+#ifdef DEBUG
+        Serial.print("MIDI USB Note: ");
+        Serial.print(" Channel: ");
+        Serial.print(keyconfig[count][2], DEC);
+        Serial.print(" Pitch: ");
+        Serial.print(keyconfig[count][3], DEC);
+        Serial.print(" Velocity: ");
+        Serial.println(keyconfig[count][4], DEC);
+#endif
+        // switch MIDI USB note on. [2]=channel, [3]=pitch, [4]=velocity
+        noteOnUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
+      // keyconfig element [1] contains type of config (C=MIDI USB Control)
+      else if (keyconfig[count][1] == 'C')
+      {
+#ifdef DEBUG
+        Serial.print("MIDI USB Control: ");
+        Serial.print(" Channel: ");
+        Serial.print(keyconfig[count][2], DEC);
+        Serial.print(" Control: ");
+        Serial.print(keyconfig[count][3], DEC);
+        Serial.print(" Value: ");
+        Serial.println(keyconfig[count][4], DEC);
+#endif
+        // switch MIDI USB control on. [2]=channel, [3]=control, [4]=value
+        controlChangeUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
+#endif
+#if MIDI == 1
+      // keyconfig element [1] contains type of config (m=MIDI)
+      if (keyconfig[count][1] == 'm')
       {
 #ifdef DEBUG
         Serial.print("MIDI Note: ");
@@ -143,8 +217,8 @@ void loop() {
         // switch MIDI note on. [2]=channel, [3]=pitch, [4]=velocity
         noteOn(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
-      // keyconfig element [1] contains type of config (C=MIDI Control)
-      else if (keyconfig[count][1] == 'C')
+      // keyconfig element [1] contains type of config (c=MIDI Control)
+      else if (keyconfig[count][1] == 'c')
       {
 #ifdef DEBUG
         Serial.print("MIDI Control: ");
@@ -180,9 +254,34 @@ void loop() {
         }
       }
 #endif
-#if MIDI == 1
-      // keyconfig element [1] contains type of config (M=MIDI)
+#if MIDIUSB == 1
+      // keyconfig element [1] contains type of config (M=MIDIUSB)
       if (keyconfig[count][1] == 'M')
+      {
+#ifdef DEBUG
+        Serial.print("MIDI USB Note release: ");
+        Serial.print(" Channel: ");
+        Serial.print(keyconfig[count][2], DEC);
+        Serial.print(" Pitch: ");
+        Serial.print(keyconfig[count][3], DEC);
+        Serial.print(" Velocity: ");
+        Serial.println(keyconfig[count][4], DEC);
+#endif
+        // switch MIDI USB note off. [2]=channel, [3]=pitch, [4]=velocity
+        noteOffUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
+#if MIDICRELEASE == 1
+      // keyconfig element [1] contains type of config (C=MIDI USB Control)
+      else if (keyconfig[count][1] == 'C')
+      {
+        // switch MIDI USB control off. [2]=channel, [3]=control, value 0=off
+        controlChangeUSB(keyconfig[count][2], keyconfig[count][3], 0);
+      }
+#endif
+#endif
+#if MIDI == 1
+      // keyconfig element [1] contains type of config (m=MIDI)
+      if (keyconfig[count][1] == 'm')
       {
 #ifdef DEBUG
         Serial.print("MIDI Note release: ");
@@ -197,10 +296,10 @@ void loop() {
         noteOff(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
 #if MIDICRELEASE == 1
-      // keyconfig element [1] contains type of config (C=MIDI Control)
-      else if (keyconfig[count][1] == 'C')
+      // keyconfig element [1] contains type of config (c=MIDI Control)
+      else if (keyconfig[count][1] == 'c')
       {
-        // switch MIDI control off. [2]=channel, [3]=control, value 0=off
+        // switch MIDI USB control off. [2]=channel, [3]=control, value 0=off
         controlChange(keyconfig[count][2], keyconfig[count][3], 0);
       }
 #endif
