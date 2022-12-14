@@ -96,10 +96,10 @@ void noteOff(byte channel, byte pitch, byte velocity) {
 // Fourth parameter is the control value (0-127).
 
 void controlChange(byte channel, byte control, byte value) {
-  Serial.write(0x0B);
+  Serial1.write(0x0B);
   Serial1.write(0xB0 | channel);
   Serial1.write(control);
-  Serial1.write(value};
+  Serial1.write(value);
 }
 #endif
 
@@ -114,7 +114,7 @@ void setup() {
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
     pinMode(keyconfig[count][0], INPUT_PULLUP);
-    switchstate[count] == 0;
+    switchstate[count] == 1;
   }
 #if KEYBOARD == 1
   // initialize Keyboard and set layout to de_DE
