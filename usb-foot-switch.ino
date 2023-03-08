@@ -10,6 +10,8 @@
 #define MIDICRELEASE 0
 // uncomment to activate serial debug output
 //#define DEBUG
+// define max elemets for keyconfig status arrays
+#define MAXELEMENTS 30
 
 #if KEYBOARD == 1
 #include "Keyboard.h"
@@ -103,66 +105,69 @@ void controlChange(byte channel, byte control, byte value) {
 }
 #endif
 
-char switchstate[30];
-
-void setup() {
-  char count;
 #ifdef DEBUG
-  Serial.begin(115200);
-#endif
-  // set pins to input and enable internal pullup; init switch state
-  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
+void print_debug(char keyconfignum, char state) {
+  Serial.print("Key ");
+  if (state == 'P')
   {
-    pinMode(keyconfig[count][0], INPUT_PULLUP);
-    switchstate[count] == 1;
+    Serial.print("pressed");
+  } else if (state == 'R')
+  {
+    Serial.print("released");
   }
-#if KEYBOARD == 1
-  // initialize Keyboard and set layout to de_DE
-  Keyboard.begin(KeyboardLayout_de_DE);
-#endif
-#if MIDI == 1
-  // initialize Serial1 for MIDI, 31250 baud
-  Serial1.begin(31250);
-#endif
+  Serial.print(" Pin: ");
+  Serial.print(keyconfig[keyconfignum][0], DEC);
+  Serial.print(" Type: ");
+  Serial.print(keyconfig[keyconfignum][1]);
+  switch(keyconfig[keyconfignum][1])
+  {
+    case 'K': Serial.print(" Keyboard V1: "); break;
+    case 'M': Serial.print(" MIDI USB Note: Channel: "); break;
+    case 'm': Serial.print(" MIDI Note: Channel: "); break;
+    case 'C': Serial.print(" MIDI USB Control: Channel: "); break;
+    case 'c': Serial.print(" MIDI Control: Channel: "); break;
+  }
+  Serial.print(keyconfig[keyconfignum][2], DEC);
+  switch(keyconfig[keyconfignum][1])
+  {
+    case 'K': Serial.print(" V2: "); break;
+    case 'M': Serial.print(" Pitch: "); break;
+    case 'm': Serial.print(" Pitch: "); break;
+    case 'C': Serial.print(" Control: "); break;
+    case 'c': Serial.print(" Control: "); break;
+  }
+  Serial.print(keyconfig[keyconfignum][3], DEC);
+  switch(keyconfig[keyconfignum][1])
+  {
+    case 'K': Serial.print(" V3: "); break;
+    case 'M': Serial.print(" Velocity: "); break;
+    case 'm': Serial.print(" Velocity: "); break;
+    case 'C': Serial.print(" Value: "); break;
+    case 'c': Serial.print(" Value: "); break;
+  }
+  Serial.println(keyconfig[keyconfignum][4], DEC);
 }
+#endif
 
-void loop() {
-  char count, keycount, currentswitchstate;
-  // loop for all configured keys
+void keyPressed(char button) {
+  char count, keycount;
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
-    // read current pin state. pin number is stored in element [0]
-    currentswitchstate = digitalRead(keyconfig[count][0]);
-    // switch has been pressed, when current state is 0 and was 1 before
-    if ((currentswitchstate == 0) and (switchstate[count] == 1))
+    if (button == keyconfig[count][0])
     {
-      // Switch pressed!
 #ifdef DEBUG
-      Serial.print("Pin: ");
-      Serial.print(keyconfig[count][0], DEC);
-      Serial.print(" Type: ");
-      Serial.print(keyconfig[count][1]);
-      Serial.print(" V1: ");
-      Serial.print(keyconfig[count][2], DEC);
-      Serial.print(" V2: ");
-      Serial.print(keyconfig[count][3], DEC);
-      Serial.print(" V3: ");
-      Serial.println(keyconfig[count][4], DEC);
+      print_debug(count, 'P');
 #endif
 #if KEYBOARD == 1
       // keyconfig element [1] contains type of config (K=Keyboard)
       if (keyconfig[count][1] == 'K')
       {
-        // loop for 3 keys per pin (start at pin 2)
+        // loop for 3 keys per pin (start at element 2)
         for (keycount = 2; keycount < sizeof(keyconfig[count]); keycount++)
         {
           // key is configured, when its not 0
           if (keyconfig[count][keycount] != 0)
           {
-#ifdef DEBUG
-            Serial.print("Keyboard: ");
-            Serial.println(keyconfig[count][keycount], DEC);
-#endif
             // press the key on the keyboard
             Keyboard.press(keyconfig[count][keycount]);
           }
@@ -173,30 +178,12 @@ void loop() {
       // keyconfig element [1] contains type of config (M=MIDI USB)
       if (keyconfig[count][1] == 'M')
       {
-#ifdef DEBUG
-        Serial.print("MIDI USB Note: ");
-        Serial.print(" Channel: ");
-        Serial.print(keyconfig[count][2], DEC);
-        Serial.print(" Pitch: ");
-        Serial.print(keyconfig[count][3], DEC);
-        Serial.print(" Velocity: ");
-        Serial.println(keyconfig[count][4], DEC);
-#endif
         // switch MIDI USB note on. [2]=channel, [3]=pitch, [4]=velocity
         noteOnUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
       // keyconfig element [1] contains type of config (C=MIDI USB Control)
       else if (keyconfig[count][1] == 'C')
       {
-#ifdef DEBUG
-        Serial.print("MIDI USB Control: ");
-        Serial.print(" Channel: ");
-        Serial.print(keyconfig[count][2], DEC);
-        Serial.print(" Control: ");
-        Serial.print(keyconfig[count][3], DEC);
-        Serial.print(" Value: ");
-        Serial.println(keyconfig[count][4], DEC);
-#endif
         // switch MIDI USB control on. [2]=channel, [3]=control, [4]=value
         controlChangeUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
@@ -205,39 +192,29 @@ void loop() {
       // keyconfig element [1] contains type of config (m=MIDI)
       if (keyconfig[count][1] == 'm')
       {
-#ifdef DEBUG
-        Serial.print("MIDI Note: ");
-        Serial.print(" Channel: ");
-        Serial.print(keyconfig[count][2], DEC);
-        Serial.print(" Pitch: ");
-        Serial.print(keyconfig[count][3], DEC);
-        Serial.print(" Velocity: ");
-        Serial.println(keyconfig[count][4], DEC);
-#endif
         // switch MIDI note on. [2]=channel, [3]=pitch, [4]=velocity
         noteOn(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
       // keyconfig element [1] contains type of config (c=MIDI Control)
       else if (keyconfig[count][1] == 'c')
       {
-#ifdef DEBUG
-        Serial.print("MIDI Control: ");
-        Serial.print(" Channel: ");
-        Serial.print(keyconfig[count][2], DEC);
-        Serial.print(" Control: ");
-        Serial.print(keyconfig[count][3], DEC);
-        Serial.print(" Value: ");
-        Serial.println(keyconfig[count][4], DEC);
-#endif
         // switch MIDI control on. [2]=channel, [3]=control, [4]=value
         controlChange(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
 #endif
     }
-    // switch has been released, when current state is 1 and was 0 before
-    else if ((currentswitchstate == 1) and (switchstate[count] == 0))
+  }
+}
+
+void keyReleased(char button) {
+  char count, keycount;
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
+  {
+    if (button == keyconfig[count][0])
     {
-      // Switch released!
+#ifdef DEBUG
+      print_debug(count, 'R');
+#endif
 #if KEYBOARD == 1
       // keyconfig element [1] contains type of config (K=Keyboard)
       if (keyconfig[count][1] == 'K')
@@ -258,15 +235,6 @@ void loop() {
       // keyconfig element [1] contains type of config (M=MIDIUSB)
       if (keyconfig[count][1] == 'M')
       {
-#ifdef DEBUG
-        Serial.print("MIDI USB Note release: ");
-        Serial.print(" Channel: ");
-        Serial.print(keyconfig[count][2], DEC);
-        Serial.print(" Pitch: ");
-        Serial.print(keyconfig[count][3], DEC);
-        Serial.print(" Velocity: ");
-        Serial.println(keyconfig[count][4], DEC);
-#endif
         // switch MIDI USB note off. [2]=channel, [3]=pitch, [4]=velocity
         noteOffUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
@@ -283,15 +251,6 @@ void loop() {
       // keyconfig element [1] contains type of config (m=MIDI)
       if (keyconfig[count][1] == 'm')
       {
-#ifdef DEBUG
-        Serial.print("MIDI Note release: ");
-        Serial.print(" Channel: ");
-        Serial.print(keyconfig[count][2], DEC);
-        Serial.print(" Pitch: ");
-        Serial.print(keyconfig[count][3], DEC);
-        Serial.print(" Velocity: ");
-        Serial.println(keyconfig[count][4], DEC);
-#endif
         // switch MIDI note off. [2]=channel, [3]=pitch, [4]=velocity
         noteOff(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
@@ -305,8 +264,69 @@ void loop() {
 #endif
 #endif
     }
-    // save state of switch
-    switchstate[count] = currentswitchstate;
+  }
+}
+
+int cmpfunc (const void * a, const void * b) {
+  return ( *(char*)a - *(char*)b );
+}
+
+unsigned char switchstate[MAXELEMENTS];
+unsigned char inputpins[MAXELEMENTS];
+
+void setup() {
+  char count;
+#ifdef DEBUG
+  Serial.begin(115200);
+#endif
+  // set pins to input and enable internal pullup; init switch state; init inputpins
+  for (count=0; count < MAXELEMENTS; count++)
+  {
+    pinMode(keyconfig[count][0], INPUT_PULLUP);
+    switchstate[count] = 1;
+    inputpins[count] = 255;
+  }
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
+  {
+    inputpins[count] = keyconfig[count][0];
+  }
+  qsort(inputpins, (sizeof(keyconfig)/sizeof(keyconfig[0])), sizeof(char), cmpfunc);
+#if KEYBOARD == 1
+  // initialize Keyboard and set layout to de_DE
+  Keyboard.begin(KeyboardLayout_de_DE);
+#endif
+#if MIDI == 1
+  // initialize Serial1 for MIDI, 31250 baud
+  Serial1.begin(31250);
+#endif
+}
+
+void loop() {
+  char count, keycount, currentswitchstate;
+  char prevpin = 0;
+  // loop for all configured keys
+  for (count=0; count < MAXELEMENTS; count++)
+  {
+    if ((inputpins[count] != prevpin) && (inputpins[count] != 255))
+    {
+      // read current pin state. pin number is stored in element [0]
+      currentswitchstate = digitalRead(inputpins[count]);
+      // switch has been pressed, when current state is 0 and was 1 before
+      if ((currentswitchstate == 0) and (switchstate[count] == 1))
+      {
+        // Switch pressed!
+        keyPressed(inputpins[count]);
+      }
+      // switch has been released, when current state is 1 and was 0 before
+      else if ((currentswitchstate == 1) and (switchstate[count] == 0))
+      {
+        // Switch released!
+        keyReleased(inputpins[count]);
+      }
+      // save state of switch
+      switchstate[count] = currentswitchstate;
+    }
+    prevpin = inputpins[count];
   }
   // delay in milliseconds
   delay(LOOPDELAY);
