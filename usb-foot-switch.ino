@@ -12,6 +12,8 @@
 #define LOOPDELAY 100
 // send MIDI Control Value 0 on release
 #define MIDICRELEASE 0
+// send MIDI Program Value 0 on release
+#define MIDIPRELEASE 0
 // uncomment to activate serial debug output
 //#define DEBUG
 // define max elemets for keyconfig status arrays
@@ -41,6 +43,8 @@ Adafruit_NeoTrellis trellis;
  *  MIDI USB { Pin number, 'M', MIDI channel, MIDI pitch, MIDI velocity }
  *  MIDI Control Change { Pin number, 'c', control channel, control, value 127 }
  *  MIDI USB Control Change { Pin number, 'C', control channel, control, value 127 }
+ *  MIDI Program Change { Pin number, 'p', program channel, program, value 127 }
+ *  MIDI USB Program Change { Pin number, 'P', program channel, program, value 127 }
  */
 
 static char keyconfig[][5] = {{2, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Keyboard, press KEY_UP_ARROW
@@ -49,8 +53,10 @@ static char keyconfig[][5] = {{2, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Ke
                               {5, 'K', '-', 0, 0},            // Switch Pin 10 Keyboard, press -
                               {6, 'M', 0, 48, 64},            // Switch Pin 11 MIDI USB Note Channel 1, middle C, normal velocity
                               {7, 'C', 1, 20, 127},           // Switch Pin 12 MIDI USB Control Channel 2, Control 20, Value 127
+                              {8, 'P', 1, 20, 127},           // Switch Pin 8 MIDI USB Program Change Channel 3, Control 40, Value 127
                               {6, 'm', 0, 48, 64},            // Switch Pin 11 MIDI Note Channel 1, middle C, normal velocity
-                              {7, 'c', 1, 20, 127}            // Switch Pin 12 MIDI Control Channel 2, Control 20, Value 127
+                              {7, 'c', 1, 20, 127},           // Switch Pin 12 MIDI Control Channel 2, Control 20, Value 127
+                              {8, 'p', 1, 20, 127}            // Switch Pin 8 MIDI Program Change Channel 2, Control 20, Value 127
                              };
 
 /* Config for NeoTrellis LED buttons (only usable in PINMODE 1)
@@ -105,6 +111,17 @@ void controlChangeUSB(byte channel, byte control, byte value) {
   MidiUSB.sendMIDI(event);
   MidiUSB.flush();
 }
+
+// First parameter is the event type (0x0C = program change).
+// Second parameter is the event type, combined with the channel.
+// Third parameter is the program change number (0-119).
+// Fourth parameter is the program value (0-127).
+
+void programChangeUSB(byte channel, byte program, byte value) {
+  midiEventPacket_t event = {0x0C, 0xC0 | channel, program, value};
+  MidiUSB.sendMIDI(event);
+  MidiUSB.flush();
+}
 #endif
 
 #if MIDI == 1
@@ -139,6 +156,18 @@ void controlChange(byte channel, byte control, byte value) {
   Serial1.write(control);
   Serial1.write(value);
 }
+
+// First parameter is the event type (0x0C = program change).
+// Second parameter is the event type, combined with the channel.
+// Third parameter is the program change number (0-119).
+// Fourth parameter is the program value (0-127).
+
+void programChange(byte channel, byte program, byte value) {
+  Serial1.write(0x0C);
+  Serial1.write(0xC0 | channel);
+  Serial1.write(program);
+  Serial1.write(value);
+}
 #endif
 
 #ifdef DEBUG
@@ -162,6 +191,8 @@ void print_debug(char keyconfignum, char state) {
     case 'm': Serial.print(" MIDI Note: Channel: "); break;
     case 'C': Serial.print(" MIDI USB Control: Channel: "); break;
     case 'c': Serial.print(" MIDI Control: Channel: "); break;
+    case 'P': Serial.print(" MIDI USB Program: Channel: "); break;
+    case 'p': Serial.print(" MIDI Program: Channel: "); break;
   }
   Serial.print(keyconfig[keyconfignum][2], DEC);
   switch(keyconfig[keyconfignum][1])
@@ -171,6 +202,8 @@ void print_debug(char keyconfignum, char state) {
     case 'm': Serial.print(" Pitch: "); break;
     case 'C': Serial.print(" Control: "); break;
     case 'c': Serial.print(" Control: "); break;
+    case 'P': Serial.print(" Program: "); break;
+    case 'p': Serial.print(" Program: "); break;
   }
   Serial.print(keyconfig[keyconfignum][3], DEC);
   switch(keyconfig[keyconfignum][1])
@@ -180,6 +213,8 @@ void print_debug(char keyconfignum, char state) {
     case 'm': Serial.print(" Velocity: "); break;
     case 'C': Serial.print(" Value: "); break;
     case 'c': Serial.print(" Value: "); break;
+    case 'P': Serial.print(" Value: "); break;
+    case 'p': Serial.print(" Value: "); break;
   }
   Serial.println(keyconfig[keyconfignum][4], DEC);
 }
@@ -223,6 +258,11 @@ void keyPressed(char button) {
         // switch MIDI USB control on. [2]=channel, [3]=control, [4]=value
         controlChangeUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
+      else if (keyconfig[count][1] == 'P')
+      {
+        // switch MIDI USB program on. [2]=channel, [3]=program, [4]=value
+        programChangeUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
 #endif
 #if MIDI == 1
       // keyconfig element [1] contains type of config (m=MIDI)
@@ -236,6 +276,11 @@ void keyPressed(char button) {
       {
         // switch MIDI control on. [2]=channel, [3]=control, [4]=value
         controlChange(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+      }
+      else if (keyconfig[count][1] == 'p')
+      {
+        // switch MIDI program on. [2]=channel, [3]=program, [4]=value
+        programChange(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
       }
 #endif
     }
@@ -282,6 +327,14 @@ void keyReleased(char button) {
         controlChangeUSB(keyconfig[count][2], keyconfig[count][3], 0);
       }
 #endif
+#if MIDIPRELEASE == 1
+      // keyconfig element [1] contains type of config (P=MIDI USB Program)
+      else if (keyconfig[count][1] == 'P')
+      {
+        // switch MIDI USB program off. [2]=channel, [3]=control, value 0=off
+        programChangeUSB(keyconfig[count][2], keyconfig[count][3], 0);
+      }
+#endif
 #endif
 #if MIDI == 1
       // keyconfig element [1] contains type of config (m=MIDI)
@@ -295,6 +348,14 @@ void keyReleased(char button) {
       else if (keyconfig[count][1] == 'c')
       {
         // switch MIDI USB control off. [2]=channel, [3]=control, value 0=off
+        controlChange(keyconfig[count][2], keyconfig[count][3], 0);
+      }
+#endif
+#if MIDIPRELEASE == 1
+      // keyconfig element [1] contains type of config (p=MIDI program)
+      else if (keyconfig[count][1] == 'p')
+      {
+        // switch MIDI USB control off. [2]=channel, [3]=program, value 0=off
         controlChange(keyconfig[count][2], keyconfig[count][3], 0);
       }
 #endif
