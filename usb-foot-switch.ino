@@ -39,24 +39,24 @@ Adafruit_NeoTrellis trellis;
  *  Keyboard { Pin number, 'K', 'Key1', 'Key2', 'Key3' }
  *    set emtpy key fields to 0
  *  or
- *  MIDI { Pin number, 'm', MIDI channel, MIDI pitch, MIDI velocity }
- *  MIDI USB { Pin number, 'M', MIDI channel, MIDI pitch, MIDI velocity }
- *  MIDI Control Change { Pin number, 'c', control channel, control, value 127 }
- *  MIDI USB Control Change { Pin number, 'C', control channel, control, value 127 }
- *  MIDI Program Change { Pin number, 'p', program channel, program, value 127 }
- *  MIDI USB Program Change { Pin number, 'P', program channel, program, value 127 }
+ *  MIDI { Pin number, bank number, 'm', MIDI channel, MIDI pitch, MIDI velocity }
+ *  MIDI USB { Pin number, bank number, 'M', MIDI channel, MIDI pitch, MIDI velocity }
+ *  MIDI Control Change { Pin number, bank number, 'c', control channel, control, value 127 }
+ *  MIDI USB Control Change { Pin number, bank number, 'C', control channel, control, value 127 }
+ *  MIDI Program Change { Pin number, bank number, 'p', program channel, program, value 127 }
+ *  MIDI USB Program Change { Pin number, bank number, 'P', program channel, program, value 127 }
  */
 
-static char keyconfig[][5] = {{2, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Keyboard, press KEY_UP_ARROW
-                              {3, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6 Keyboard, press KEY_DOWN_ARROW
-                              {4, 'K', '+', 0, 0},            // Switch Pin 9 Keyboard, press +
-                              {5, 'K', '-', 0, 0},            // Switch Pin 10 Keyboard, press -
-                              {6, 'M', 0, 48, 64},            // Switch Pin 11 MIDI USB Note Channel 1, middle C, normal velocity
-                              {7, 'C', 1, 20, 127},           // Switch Pin 12 MIDI USB Control Channel 2, Control 20, Value 127
-                              {8, 'P', 1, 20, 127},           // Switch Pin 8 MIDI USB Program Change Channel 3, Control 40, Value 127
-                              {6, 'm', 0, 48, 64},            // Switch Pin 11 MIDI Note Channel 1, middle C, normal velocity
-                              {7, 'c', 1, 20, 127},           // Switch Pin 12 MIDI Control Channel 2, Control 20, Value 127
-                              {8, 'p', 1, 20, 127}            // Switch Pin 8 MIDI Program Change Channel 2, Control 20, Value 127
+static char keyconfig[][6] = {{2, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5, Bank 1, Keyboard, press KEY_UP_ARROW
+                              {3, 1, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 6, Bank 1, Keyboard, press KEY_DOWN_ARROW
+                              {4, 1, 'K', '+', 0, 0},            // Switch Pin 9, Bank 1, Keyboard, press +
+                              {5, 1, 'K', '-', 0, 0},            // Switch Pin 10, Bank 1, Keyboard, press -
+                              {6, 1, 'M', 0, 48, 64},            // Switch Pin 11, Bank 1, MIDI USB Note Channel 1, middle C, normal velocity
+                              {7, 1, 'C', 1, 20, 127},           // Switch Pin 12, Bank 1, MIDI USB Control Channel 2, Control 20, Value 127
+                              {8, 1, 'P', 1, 20, 127},           // Switch Pin 8, Bank 1, MIDI USB Program Change Channel 3, Control 40, Value 127
+                              {6, 1, 'm', 0, 48, 64},            // Switch Pin 11, Bank 1, MIDI Note Channel 1, middle C, normal velocity
+                              {7, 1, 'c', 1, 20, 127},           // Switch Pin 12, Bank 1, MIDI Control Channel 2, Control 20, Value 127
+                              {8, 1, 'p', 1, 20, 127}            // Switch Pin 8, Bank 1, MIDI Program Change Channel 2, Control 20, Value 127
                              };
 
 /* Config for NeoTrellis LED buttons (only usable in PINMODE 1)
@@ -220,21 +220,21 @@ void print_debug(char keyconfignum, char state) {
 }
 #endif
 
-void keyPressed(char button) {
+void keyPressed(char button, char bank) {
   char count, keycount;
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
-    if (button == keyconfig[count][0])
+    if ((button == keyconfig[count][0]) and (bank == keyconfig[count][1]))
     {
 #ifdef DEBUG
       print_debug(count, 'P');
 #endif
 #if KEYBOARD == 1
-      // keyconfig element [1] contains type of config (K=Keyboard)
-      if (keyconfig[count][1] == 'K')
+      // keyconfig element [2] contains type of config (K=Keyboard)
+      if (keyconfig[count][2] == 'K')
       {
-        // loop for 3 keys per pin (start at element 2)
-        for (keycount = 2; keycount < sizeof(keyconfig[count]); keycount++)
+        // loop for 3 keys per pin (start at element 3)
+        for (keycount = 3; keycount < sizeof(keyconfig[count]); keycount++)
         {
           // key is configured, when its not 0
           if (keyconfig[count][keycount] != 0)
@@ -246,62 +246,64 @@ void keyPressed(char button) {
       }
 #endif
 #if MIDIUSB == 1
-      // keyconfig element [1] contains type of config (M=MIDI USB)
-      if (keyconfig[count][1] == 'M')
+      // keyconfig element [2] contains type of config (M=MIDI USB)
+      if (keyconfig[count][2] == 'M')
       {
-        // switch MIDI USB note on. [2]=channel, [3]=pitch, [4]=velocity
-        noteOnUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+        // switch MIDI USB note on. [3]=channel, [4]=pitch, [5]=velocity
+        noteOnUSB(keyconfig[count][3], keyconfig[count][4], keyconfig[count][5]);
       }
-      // keyconfig element [1] contains type of config (C=MIDI USB Control)
-      else if (keyconfig[count][1] == 'C')
+      // keyconfig element [2] contains type of config (C=MIDI USB Control)
+      else if (keyconfig[count][2] == 'C')
       {
-        // switch MIDI USB control on. [2]=channel, [3]=control, [4]=value
-        controlChangeUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+        // switch MIDI USB control on. [3]=channel, [4]=control, [5]=value
+        controlChangeUSB(keyconfig[count][3], keyconfig[count][4], keyconfig[count][5]);
       }
-      else if (keyconfig[count][1] == 'P')
+      // keyconfig element [2] contains type of config (C=MIDI USB Program)
+      else if (keyconfig[count][2] == 'P')
       {
-        // switch MIDI USB program on. [2]=channel, [3]=program, [4]=value
-        programChangeUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+        // switch MIDI USB program on. [3]=channel, [4]=program, [5]=value
+        programChangeUSB(keyconfig[count][3], keyconfig[count][4], keyconfig[count][5]);
       }
 #endif
 #if MIDI == 1
-      // keyconfig element [1] contains type of config (m=MIDI)
-      if (keyconfig[count][1] == 'm')
+      // keyconfig element [2] contains type of config (m=MIDI)
+      if (keyconfig[count][2] == 'm')
       {
-        // switch MIDI note on. [2]=channel, [3]=pitch, [4]=velocity
-        noteOn(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+        // switch MIDI note on. [3]=channel, [4]=pitch, [5]=velocity
+        noteOn(keyconfig[count][3], keyconfig[count][4], keyconfig[count][5]);
       }
-      // keyconfig element [1] contains type of config (c=MIDI Control)
-      else if (keyconfig[count][1] == 'c')
+      // keyconfig element [2] contains type of config (c=MIDI Control)
+      else if (keyconfig[count][2] == 'c')
       {
-        // switch MIDI control on. [2]=channel, [3]=control, [4]=value
-        controlChange(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+        // switch MIDI control on. [3]=channel, [4]=control, [5]=value
+        controlChange(keyconfig[count][3], keyconfig[count][4], keyconfig[count][5]);
       }
-      else if (keyconfig[count][1] == 'p')
+      // keyconfig element [2] contains type of config (C=MIDI Program)
+      else if (keyconfig[count][2] == 'p')
       {
-        // switch MIDI program on. [2]=channel, [3]=program, [4]=value
-        programChange(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+        // switch MIDI program on. [3]=channel, [4]=program, [5]=value
+        programChange(keyconfig[count][3], keyconfig[count][4], keyconfig[count][5]);
       }
 #endif
     }
   }
 }
 
-void keyReleased(char button) {
+void keyReleased(char button, char bank) {
   char count, keycount;
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
-    if (button == keyconfig[count][0])
+    if ((button == keyconfig[count][0]) and (bank == keyconfig[count][1]))
     {
 #ifdef DEBUG
       print_debug(count, 'R');
 #endif
 #if KEYBOARD == 1
-      // keyconfig element [1] contains type of config (K=Keyboard)
-      if (keyconfig[count][1] == 'K')
+      // keyconfig element [2] contains type of config (K=Keyboard)
+      if (keyconfig[count][2] == 'K')
       {
-        // loop for 3 keys per pin (start at element 2)
-        for (keycount = 2; keycount < sizeof(keyconfig[count]); keycount++)
+        // loop for 3 keys per pin (start at element 3)
+        for (keycount = 3; keycount < sizeof(keyconfig[count]); keycount++)
         {
           // key is configured, when its not 0
           if (keyconfig[count][keycount] != 0)
@@ -313,50 +315,50 @@ void keyReleased(char button) {
       }
 #endif
 #if MIDIUSB == 1
-      // keyconfig element [1] contains type of config (M=MIDIUSB)
-      if (keyconfig[count][1] == 'M')
+      // keyconfig element [2] contains type of config (M=MIDIUSB)
+      if (keyconfig[count][2] == 'M')
       {
-        // switch MIDI USB note off. [2]=channel, [3]=pitch, [4]=velocity
-        noteOffUSB(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+        // switch MIDI USB note off. [3]=channel, [4]=pitch, [5]=velocity
+        noteOffUSB(keyconfig[count][3], keyconfig[count][4], keyconfig[count][5]);
       }
 #if MIDICRELEASE == 1
-      // keyconfig element [1] contains type of config (C=MIDI USB Control)
-      else if (keyconfig[count][1] == 'C')
+      // keyconfig element [2] contains type of config (C=MIDI USB Control)
+      else if (keyconfig[count][2] == 'C')
       {
-        // switch MIDI USB control off. [2]=channel, [3]=control, value 0=off
-        controlChangeUSB(keyconfig[count][2], keyconfig[count][3], 0);
+        // switch MIDI USB control off. [3]=channel, [4]=control, value 0=off
+        controlChangeUSB(keyconfig[count][3], keyconfig[count][4], 0);
       }
 #endif
 #if MIDIPRELEASE == 1
-      // keyconfig element [1] contains type of config (P=MIDI USB Program)
-      else if (keyconfig[count][1] == 'P')
+      // keyconfig element [2] contains type of config (P=MIDI USB Program)
+      else if (keyconfig[count][2] == 'P')
       {
-        // switch MIDI USB program off. [2]=channel, [3]=control, value 0=off
-        programChangeUSB(keyconfig[count][2], keyconfig[count][3], 0);
+        // switch MIDI USB program off. [3]=channel, [4]=control, value 0=off
+        programChangeUSB(keyconfig[count][3], keyconfig[count][4], 0);
       }
 #endif
 #endif
 #if MIDI == 1
-      // keyconfig element [1] contains type of config (m=MIDI)
-      if (keyconfig[count][1] == 'm')
+      // keyconfig element [2] contains type of config (m=MIDI)
+      if (keyconfig[count][2] == 'm')
       {
-        // switch MIDI note off. [2]=channel, [3]=pitch, [4]=velocity
-        noteOff(keyconfig[count][2], keyconfig[count][3], keyconfig[count][4]);
+        // switch MIDI note off. [3]=channel, [4]=pitch, [5]=velocity
+        noteOff(keyconfig[count][3], keyconfig[count][4], keyconfig[count][5]);
       }
 #if MIDICRELEASE == 1
-      // keyconfig element [1] contains type of config (c=MIDI Control)
-      else if (keyconfig[count][1] == 'c')
+      // keyconfig element [2] contains type of config (c=MIDI Control)
+      else if (keyconfig[count][2] == 'c')
       {
-        // switch MIDI USB control off. [2]=channel, [3]=control, value 0=off
-        controlChange(keyconfig[count][2], keyconfig[count][3], 0);
+        // switch MIDI USB control off. [3]=channel, [4]=control, value 0=off
+        controlChange(keyconfig[count][3], keyconfig[count][4], 0);
       }
 #endif
 #if MIDIPRELEASE == 1
       // keyconfig element [1] contains type of config (p=MIDI program)
-      else if (keyconfig[count][1] == 'p')
+      else if (keyconfig[count][2] == 'p')
       {
-        // switch MIDI USB control off. [2]=channel, [3]=program, value 0=off
-        controlChange(keyconfig[count][2], keyconfig[count][3], 0);
+        // switch MIDI USB control off. [3]=channel, [4]=program, value 0=off
+        programChange(keyconfig[count][3], keyconfig[count][4], 0);
       }
 #endif
 #endif
@@ -442,6 +444,7 @@ void setup() {
 void loop() {
   char count, keycount, currentswitchstate;
   char prevpin = 0;
+  unsigned char selected_bank = 1;
 #if PINMODE == 0
   // loop for all configured keys
   for (count=0; count < MAXELEMENTS; count++)
@@ -454,13 +457,13 @@ void loop() {
       if ((currentswitchstate == 0) and (switchstate[count] == 1))
       {
         // Switch pressed!
-        keyPressed(inputpins[count]);
+        keyPressed(inputpins[count],selected_bank);
       }
       // switch has been released, when current state is 1 and was 0 before
       else if ((currentswitchstate == 1) and (switchstate[count] == 0))
       {
         // Switch released!
-        keyReleased(inputpins[count]);
+        keyReleased(inputpins[count],selected_bank);
       }
       // save state of switch
       switchstate[count] = currentswitchstate;
