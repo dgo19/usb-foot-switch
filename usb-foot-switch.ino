@@ -37,7 +37,10 @@ Adafruit_NeoTrellis trellis;
  *  Keyboard { Pin number, 'K', 'Key1', 'Key2', 'Key3' }
  *    set emtpy key fields to 0
  *  or
- *  MIDI { Pin number, 'M', MIDI channel, MIDI pitch, MIDI velocity
+ *  MIDI { Pin number, 'm', MIDI channel, MIDI pitch, MIDI velocity }
+ *  MIDI USB { Pin number, 'M', MIDI channel, MIDI pitch, MIDI velocity }
+ *  MIDI Control Change { Pin number, 'c', control channel, control, value 127 }
+ *  MIDI USB Control Change { Pin number, 'C', control channel, control, value 127 }
  */
 
 static char keyconfig[][5] = {{2, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 5 Keyboard, press KEY_UP_ARROW
