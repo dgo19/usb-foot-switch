@@ -50,16 +50,16 @@ Adafruit_NeoTrellis trellis;
 
 static char keyconfig[][6] = {{2, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Keyboard, press KEY_UP_ARROW
                               {3, 1, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 3, Bank 1, Keyboard, press KEY_DOWN_ARROW
-                              {4, 1, 'K', '+', 0, 0},            // Switch Pin 4, Bank 1, Keyboard, press +
-                              {5, 1, 'K', '-', 0, 0},            // Switch Pin 5, Bank 1, Keyboard, press -
-                              {6, 1, 'M', 0, 48, 64},            // Switch Pin 6, Bank 1, MIDI USB Note Channel 1, middle C, normal velocity
-                              {7, 1, 'C', 1, 20, 127},           // Switch Pin 7, Bank 1, MIDI USB Control Channel 2, Control 20, Value 127
-                              {8, 1, 'P', 1, 20, 127},           // Switch Pin 8, Bank 1, MIDI USB Program Change Channel 3, Control 40, Value 127
-                              {6, 1, 'm', 0, 48, 64},            // Switch Pin 6, Bank 1, MIDI Note Channel 1, middle C, normal velocity
-                              {7, 1, 'c', 1, 20, 127},           // Switch Pin 7, Bank 1, MIDI Control Channel 2, Control 20, Value 127
-                              {8, 1, 'p', 1, 20, 127},           // Switch Pin 8, Bank 1, MIDI Program Change Channel 2, Control 20, Value 127
-                              {11, 0, 'b', 1, 20, 127},          // Switch Pin 12, Bank 0 (has to be 0), Bank down
-                              {12, 0, 'B', 1, 20, 127}           // Switch Pin 12, Bank 0 (has to be 0), Bank up
+                              {2, 2, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Keyboard, press +
+                              {3, 2, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Keyboard, press -
+                              {2, 3, 'M', 0, 48, 64},            // Switch Pin 2, Bank 3, MIDI USB Note Channel 1, middle C, normal velocity
+                              {3, 3, 'm', 0, 48, 64},            // Switch Pin 3, Bank 4, MIDI Note Channel 1, middle C, normal velocity
+                              {2, 4, 'C', 1, 20, 127},           // Switch Pin 3, Bank 3, MIDI USB Control Channel 2, Control 20, Value 127
+                              {3, 4, 'c', 1, 20, 127},           // Switch Pin 2, Bank 5, MIDI Control Channel 2, Control 20, Value 127
+                              {2, 5, 'P', 1, 20, 127},           // Switch Pin 2, Bank 4, MIDI USB Program Change Channel 3, Control 40, Value 127
+                              {3, 5, 'p', 1, 20, 127},           // Switch Pin 3, Bank 5, MIDI Program Change Channel 2, Control 20, Value 127
+                              {4, 0, 'b', 0, 0, 0},              // Switch Pin 4, Bank 0 (has to be 0), Bank down
+                              {5, 0, 'B', 0, 0, 0}               // Switch Pin 5, Bank 0 (has to be 0), Bank up
                              };
 
 /* Config for NeoTrellis LED buttons (only usable in PINMODE 1)
@@ -395,8 +395,8 @@ TrellisCallback blink(keyEvent evt){
 
 unsigned char switchstate[MAXELEMENTS];
 unsigned char inputpins[MAXELEMENTS];
-unsigned char bank_max = 1;
-unsigned char bank_selected = 1;
+char bank_max = 1;
+char bank_selected = 1;
 
 void setup() {
   char count;
@@ -411,15 +411,15 @@ void setup() {
 #endif
     switchstate[count] = 1;
     inputpins[count] = 255;
+  }
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
+  {
+    inputpins[count] = keyconfig[count][0];
     // get maximum bank number
     if (keyconfig[count][1] > bank_max)
     {
       bank_max = keyconfig[count][1];
     }
-  }
-  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
-  {
-    inputpins[count] = keyconfig[count][0];
   }
   qsort(inputpins, (sizeof(keyconfig)/sizeof(keyconfig[0])), sizeof(char), cmpfunc);
 #if KEYBOARD == 1
@@ -453,6 +453,10 @@ void setup() {
   delay(10);
   trellis.pixels.show();
 #endif
+#ifdef DEBUG
+  Serial.print("max bank is ");
+  Serial.println(bank_max, DEC);
+#endif
 }
 
 void loop() {
@@ -473,6 +477,9 @@ void loop() {
         // handling for bank switch
         if (keyconfig[count][1] == 0)
         {
+#ifdef DEBUG
+          print_debug(count, 'P');
+#endif
           if (keyconfig[count][2] == 'b')
           {
             if (bank_selected > 1)
@@ -495,6 +502,10 @@ void loop() {
               bank_selected = 1;
             }
           }
+#ifdef DEBUG
+          Serial.print("Bank changed to ");
+          Serial.println(bank_selected, DEC);
+#endif
         }
         else
         {
