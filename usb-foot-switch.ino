@@ -268,12 +268,14 @@ void keyPressed(char button, char bank) {
   char count, keycount;
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
-    if ((button == keyconfig[count][0]) and (bank == keyconfig[count][1]))
+    if ((button == keyconfig[count][0]) and ((bank == keyconfig[count][1]) or (0 == keyconfig[count][1])))
     {
 #ifdef DEBUG
       print_debug(count, 'P');
 #endif
-      displayKeyPress(keyconfig[count][2]);
+      if (keyconfig[count][1] != 0) {
+        displayKeyPress(keyconfig[count][2]);
+      }
 #if KEYBOARD == 1
       // keyconfig element [3] contains type of config (K=Keyboard)
       if (keyconfig[count][3] == 'K')
@@ -338,7 +340,7 @@ void keyReleased(char button, char bank) {
   char count, keycount;
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
   {
-    if ((button == keyconfig[count][0]) and (bank == keyconfig[count][1]))
+    if ((button == keyconfig[count][0]) and ((bank == keyconfig[count][1]) or (0 == keyconfig[count][1])))
     {
 #ifdef DEBUG
       print_debug(count, 'R');
