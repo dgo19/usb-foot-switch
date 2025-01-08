@@ -57,18 +57,18 @@ Adafruit_7segment sevenseg = Adafruit_7segment();
  *  Bank up { Pin number, bank number (has to be 0), 'B', all other values 0 }
  */
 
-static char keyconfig[][7] = {{2, 1, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Display 1, Keyboard, press KEY_UP_ARROW
-                              {3, 1, 2, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 3, Bank 1, Display 2, Keyboard, press KEY_DOWN_ARROW
-                              {2, 2, 1, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Display 1, Keyboard, press +
-                              {3, 2, 2, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Display 2, Keyboard, press -
-                              {2, 3, 1, 'M', 0, 48, 64},            // Switch Pin 2, Bank 3, Display 1, MIDI USB Note Channel 1, middle C, normal velocity
-                              {3, 3, 2, 'm', 0, 48, 64},            // Switch Pin 3, Bank 4, Display 2, MIDI Note Channel 1, middle C, normal velocity
-                              {2, 4, 1, 'C', 1, 20, 127},           // Switch Pin 3, Bank 3, Display 1, MIDI USB Control Channel 2, Control 20, Value 127
-                              {3, 4, 2, 'c', 1, 20, 127},           // Switch Pin 2, Bank 5, Display 2, MIDI Control Channel 2, Control 20, Value 127
-                              {2, 5, 1, 'P', 1, 20, 127},           // Switch Pin 2, Bank 4, Display 1, MIDI USB Program Change Channel 3, Control 40, Value 127
-                              {3, 5, 2, 'p', 1, 20, 127},           // Switch Pin 3, Bank 5, Display 2, MIDI Program Change Channel 2, Control 20, Value 127
-                              {4, 0, 0, 'b', 0, 0, 0},              // Switch Pin 4, Bank 0 (has to be 0), Display 0 (has to be 0), Bank down
-                              {5, 0, 0, 'B', 0, 0, 0}               // Switch Pin 5, Bank 0 (has to be 0), Display 0 (has to be 0), Bank up
+static char keyconfig[][7] = {{4, 1, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Display 1, Keyboard, press KEY_UP_ARROW
+                              {5, 1, 2, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 3, Bank 1, Display 2, Keyboard, press KEY_DOWN_ARROW
+                              {4, 2, 1, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Display 1, Keyboard, press +
+                              {5, 2, 2, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Display 2, Keyboard, press -
+                              {4, 3, 1, 'M', 0, 48, 64},            // Switch Pin 2, Bank 3, Display 1, MIDI USB Note Channel 1, middle C, normal velocity
+                              {5, 3, 2, 'm', 0, 48, 64},            // Switch Pin 3, Bank 4, Display 2, MIDI Note Channel 1, middle C, normal velocity
+                              {4, 4, 1, 'C', 1, 20, 127},           // Switch Pin 3, Bank 3, Display 1, MIDI USB Control Channel 2, Control 20, Value 127
+                              {5, 4, 2, 'c', 1, 20, 127},           // Switch Pin 2, Bank 5, Display 2, MIDI Control Channel 2, Control 20, Value 127
+                              {4, 5, 1, 'P', 1, 20, 127},           // Switch Pin 2, Bank 4, Display 1, MIDI USB Program Change Channel 3, Control 40, Value 127
+                              {5, 5, 2, 'p', 1, 20, 127},           // Switch Pin 3, Bank 5, Display 2, MIDI Program Change Channel 2, Control 20, Value 127
+                              {6, 0, 0, 'b', 0, 0, 0},              // Switch Pin 4, Bank 0 (has to be 0), Display 0 (has to be 0), Bank down
+                              {7, 0, 0, 'B', 0, 0, 0}               // Switch Pin 5, Bank 0 (has to be 0), Display 0 (has to be 0), Bank up
                              };
 
 /* Config for NeoTrellis LED buttons (only usable in PINMODE 1)
@@ -189,9 +189,9 @@ void displayBankChange(char bank) {
   sevenseg.clear();
   sevenseg.drawColon(true);
   if (bankdigit1 != 0) {
-    sevenseg.writeDigitNum(1, bankdigit1, false);
+    sevenseg.writeDigitNum(0, bankdigit1, false);
   }
-  sevenseg.writeDigitNum(2, bank % 10, false);
+  sevenseg.writeDigitNum(1, bank % 10, false);
   sevenseg.writeDisplay();
 #endif
 }
@@ -496,6 +496,7 @@ sevenseg.begin(SEVENSEGADDR);
 displayBankChange(bank_selected);
 #endif
 #ifdef DEBUG
+  delay(5000);
   Serial.print("max bank is ");
   Serial.println(bank_max, DEC);
 #endif
@@ -522,7 +523,7 @@ void loop() {
 #ifdef DEBUG
           print_debug(count, 'P');
 #endif
-          if (keyconfig[count][2] == 'b')
+          if (keyconfig[count][3] == 'b')
           {
             if (bank_selected > 1)
             {
@@ -533,7 +534,7 @@ void loop() {
               bank_selected = bank_max;
             }
           }
-          else if (keyconfig[count][2] == 'B')
+          else if (keyconfig[count][3] == 'B')
           {
             if (bank_selected < bank_max)
             {
