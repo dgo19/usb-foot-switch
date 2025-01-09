@@ -59,8 +59,8 @@ Adafruit_7segment sevenseg = Adafruit_7segment();
 
 static char keyconfig[][7] = {{4, 1, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Display 1, Keyboard, press KEY_UP_ARROW
                               {5, 1, 2, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 3, Bank 1, Display 2, Keyboard, press KEY_DOWN_ARROW
-                              {4, 2, 1, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Display 1, Keyboard, press +
-                              {5, 2, 2, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Display 2, Keyboard, press -
+                              {4, 2, 0, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Display 1, Keyboard, press +
+                              {5, 2, 0, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Display 2, Keyboard, press -
                               {4, 3, 1, 'M', 0, 48, 64},            // Switch Pin 2, Bank 3, Display 1, MIDI USB Note Channel 1, middle C, normal velocity
                               {5, 3, 2, 'm', 0, 48, 64},            // Switch Pin 3, Bank 4, Display 2, MIDI Note Channel 1, middle C, normal velocity
                               {4, 4, 1, 'C', 1, 20, 127},           // Switch Pin 3, Bank 3, Display 1, MIDI USB Control Channel 2, Control 20, Value 127
@@ -83,7 +83,7 @@ static char keyconfig[][7] = {{4, 1, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pi
  *  Colors: 0..255
  */
 
-static uint32_t buttonled[][KCDISP] = {{0x7F0000, 0x000000}, // button  1
+static uint32_t buttonled[][2] = {{0x7F0000, 0x000000}, // button  1
                                   {0x007F00, 0x00FF00}, // button  2
                                   {0x00007F, 0x0000FF}, // button  3
                                   {0x000000, 0x0000FF}, // button  4
@@ -205,13 +205,16 @@ void displayBankChange(char bank) {
 
 void displayKeyPress(char keyNumber) {
 #if SEVENSEG == 1
-  char keydigit1;
-  keydigit1 = (keyNumber / 10);
-  if (keydigit1 != 0) {
-    sevenseg.writeDigitNum(3, keydigit1, false);
+  if (keyNumber != 0)
+  {
+    char keydigit1;
+    keydigit1 = (keyNumber / 10);
+    if (keydigit1 != 0) {
+      sevenseg.writeDigitNum(3, keydigit1, false);
+    }
+    sevenseg.writeDigitNum(4, keyNumber % 10, false);
+    sevenseg.writeDisplay();
   }
-  sevenseg.writeDigitNum(4, keyNumber % 10, false);
-  sevenseg.writeDisplay();
 #endif
 }
 
@@ -429,11 +432,11 @@ int cmpfunc (const void * a, const void * b) {
 TrellisCallback blink(keyEvent evt){
   if(evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
     keyPressed(evt.bit.NUM); //on rising
-    trellis.pixels.setPixelColor(evt.bit.NUM, buttonled[evt.bit.NUM][KCBANK]);
+    trellis.pixels.setPixelColor(evt.bit.NUM, buttonled[evt.bit.NUM][1]);
   }
   else if(evt.bit.EDGE == SEESAW_KEYPAD_EDGE_FALLING) {
     keyReleased(evt.bit.NUM); //off falling
-    trellis.pixels.setPixelColor(evt.bit.NUM, buttonled[evt.bit.NUM][KCPIN]);
+    trellis.pixels.setPixelColor(evt.bit.NUM, buttonled[evt.bit.NUM][0]);
   }
   trellis.pixels.show();
   return 0;
