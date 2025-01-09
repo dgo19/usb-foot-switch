@@ -545,6 +545,11 @@ void loop() {
             {
               bank_selected = bank_max;
             }
+            displayBankChange(bank_selected);
+#ifdef DEBUG
+            Serial.print("Bank changed to ");
+            Serial.println(bank_selected, DEC);
+#endif
           }
           else if (keyconfig[count][KCFUNC] == 'B')
           {
@@ -556,17 +561,14 @@ void loop() {
             {
               bank_selected = 1;
             }
-          }
-          displayBankChange(bank_selected);
+            displayBankChange(bank_selected);
 #ifdef DEBUG
-          Serial.print("Bank changed to ");
-          Serial.println(bank_selected, DEC);
+            Serial.print("Bank changed to ");
+            Serial.println(bank_selected, DEC);
 #endif
+          }
         }
-        else
-        {
-          keyPressed(inputpins[count],bank_selected);
-        }
+        keyPressed(inputpins[count],bank_selected);
       }
       // switch has been released, when current state is 1 and was 0 before
       else if ((currentswitchstate == 1) and (switchstate[count] == 0))
