@@ -70,13 +70,20 @@ static char keyconfig[][7] = {{4, 1, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pi
                               {6, 0, 0, 'b', 0, 0, 0},              // Switch Pin 4, Bank 0 (has to be 0), Display 0 (has to be 0), Bank down
                               {7, 0, 0, 'B', 0, 0, 0}               // Switch Pin 5, Bank 0 (has to be 0), Display 0 (has to be 0), Bank up
                              };
+#define KCPIN 0
+#define KCBANK 1
+#define KCDISP 2
+#define KCFUNC 3
+#define KCCHAN 4
+#define KCPITC 5
+#define KCVALU 6
 
 /* Config for NeoTrellis LED buttons (only usable in PINMODE 1)
  *  Button { idle 0xRRGGBB, pressed 0xRRGGBB}
  *  Colors: 0..255
  */
 
-static uint32_t buttonled[][2] = {{0x7F0000, 0x000000}, // button  1
+static uint32_t buttonled[][KCDISP] = {{0x7F0000, 0x000000}, // button  1
                                   {0x007F00, 0x00FF00}, // button  2
                                   {0x00007F, 0x0000FF}, // button  3
                                   {0x000000, 0x0000FF}, // button  4
@@ -219,14 +226,14 @@ void print_debug(char keyconfignum, char state) {
     Serial.print("released");
   }
   Serial.print(" Pin: ");
-  Serial.print(keyconfig[keyconfignum][0], DEC);
+  Serial.print(keyconfig[keyconfignum][KCPIN], DEC);
   Serial.print(" Bank: ");
-  Serial.print(keyconfig[keyconfignum][1], DEC);
+  Serial.print(keyconfig[keyconfignum][KCBANK], DEC);
   Serial.print(" Display: ");
-  Serial.print(keyconfig[keyconfignum][2], DEC);
+  Serial.print(keyconfig[keyconfignum][KCDISP], DEC);
   Serial.print(" Type: ");
-  Serial.print(keyconfig[keyconfignum][3]);
-  switch(keyconfig[keyconfignum][3])
+  Serial.print(keyconfig[keyconfignum][KCFUNC]);
+  switch(keyconfig[keyconfignum][KCFUNC])
   {
     case 'K': Serial.print(" Keyboard V1: "); break;
     case 'M': Serial.print(" MIDI USB Note: Channel: "); break;
@@ -238,8 +245,8 @@ void print_debug(char keyconfignum, char state) {
     case 'b': Serial.print(" Bank down: Channel: "); break;
     case 'B': Serial.print(" Bank up: Channel: "); break;
   }
-  Serial.print(keyconfig[keyconfignum][4], DEC);
-  switch(keyconfig[keyconfignum][3])
+  Serial.print(keyconfig[keyconfignum][KCCHAN], DEC);
+  switch(keyconfig[keyconfignum][KCFUNC])
   {
     case 'K': Serial.print(" V2: "); break;
     case 'M': Serial.print(" Pitch: "); break;
@@ -249,8 +256,8 @@ void print_debug(char keyconfignum, char state) {
     case 'P': Serial.print(" Program: "); break;
     case 'p': Serial.print(" Program: "); break;
   }
-  Serial.print(keyconfig[keyconfignum][5], DEC);
-  switch(keyconfig[keyconfignum][3])
+  Serial.print(keyconfig[keyconfignum][KCPITC], DEC);
+  switch(keyconfig[keyconfignum][KCFUNC])
   {
     case 'K': Serial.print(" V3: "); break;
     case 'M': Serial.print(" Velocity: "); break;
@@ -260,25 +267,25 @@ void print_debug(char keyconfignum, char state) {
     case 'P': Serial.print(" Value: "); break;
     case 'p': Serial.print(" Value: "); break;
   }
-  Serial.println(keyconfig[keyconfignum][6], DEC);
+  Serial.println(keyconfig[keyconfignum][KCVALU], DEC);
 }
 #endif
 
 void keyPressed(char button, char bank) {
   char count, keycount;
-  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[KCPIN])); count++)
   {
-    if ((button == keyconfig[count][0]) and ((bank == keyconfig[count][1]) or (0 == keyconfig[count][1])))
+    if ((button == keyconfig[count][KCPIN]) and ((bank == keyconfig[count][KCBANK]) or (0 == keyconfig[count][KCBANK])))
     {
 #ifdef DEBUG
       print_debug(count, 'P');
 #endif
-      if (keyconfig[count][1] != 0) {
-        displayKeyPress(keyconfig[count][2]);
+      if (keyconfig[count][KCBANK] != 0) {
+        displayKeyPress(keyconfig[count][KCDISP]);
       }
 #if KEYBOARD == 1
-      // keyconfig element [3] contains type of config (K=Keyboard)
-      if (keyconfig[count][3] == 'K')
+      // keyconfig element [KCFUNC] contains type of config (K=Keyboard)
+      if (keyconfig[count][KCFUNC] == 'K')
       {
         // loop for 3 keys per pin (start at element 4)
         for (keycount = 4; keycount < sizeof(keyconfig[count]); keycount++)
@@ -293,43 +300,43 @@ void keyPressed(char button, char bank) {
       }
 #endif
 #if MIDIUSB == 1
-      // keyconfig element [3] contains type of config (M=MIDI USB)
-      if (keyconfig[count][3] == 'M')
+      // keyconfig element [KCFUNC] contains type of config (M=MIDI USB)
+      if (keyconfig[count][KCFUNC] == 'M')
       {
-        // switch MIDI USB note on. [4]=channel, [5]=pitch, [6]=velocity
-        noteOnUSB(keyconfig[count][4], keyconfig[count][5], keyconfig[count][6]);
+        // switch MIDI USB note on. [KCCHAN]=channel, [KCPITC]=pitch, [KCVALU]=velocity
+        noteOnUSB(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], keyconfig[count][KCVALU]);
       }
-      // keyconfig element [3] contains type of config (C=MIDI USB Control)
-      else if (keyconfig[count][3] == 'C')
+      // keyconfig element [KCFUNC] contains type of config (C=MIDI USB Control)
+      else if (keyconfig[count][KCFUNC] == 'C')
       {
-        // switch MIDI USB control on. [4]=channel, [5]=control, [6]=value
-        controlChangeUSB(keyconfig[count][4], keyconfig[count][5], keyconfig[count][6]);
+        // switch MIDI USB control on. [KCCHAN]=channel, [KCPITC]=control, [KCVALU]=value
+        controlChangeUSB(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], keyconfig[count][KCVALU]);
       }
-      // keyconfig element [3] contains type of config (C=MIDI USB Program)
-      else if (keyconfig[count][3] == 'P')
+      // keyconfig element [KCFUNC] contains type of config (C=MIDI USB Program)
+      else if (keyconfig[count][KCFUNC] == 'P')
       {
-        // switch MIDI USB program on. [4]=channel, [5]=program, [6]=value
-        programChangeUSB(keyconfig[count][4], keyconfig[count][5], keyconfig[count][6]);
+        // switch MIDI USB program on. [KCCHAN]=channel, [KCPITC]=program, [KCVALU]=value
+        programChangeUSB(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], keyconfig[count][KCVALU]);
       }
 #endif
 #if MIDI == 1
-      // keyconfig element [3] contains type of config (m=MIDI)
-      if (keyconfig[count][3] == 'm')
+      // keyconfig element [KCFUNC] contains type of config (m=MIDI)
+      if (keyconfig[count][KCFUNC] == 'm')
       {
-        // switch MIDI note on. [4]=channel, [5]=pitch, [6]=velocity
-        noteOn(keyconfig[count][4], keyconfig[count][5], keyconfig[count][6]);
+        // switch MIDI note on. [KCCHAN]=channel, [KCPITC]=pitch, [KCVALU]=velocity
+        noteOn(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], keyconfig[count][KCVALU]);
       }
-      // keyconfig element [3] contains type of config (c=MIDI Control)
-      else if (keyconfig[count][3] == 'c')
+      // keyconfig element [KCFUNC] contains type of config (c=MIDI Control)
+      else if (keyconfig[count][KCFUNC] == 'c')
       {
-        // switch MIDI control on. [4]=channel, [5]=control, [6]=value
-        controlChange(keyconfig[count][4], keyconfig[count][5], keyconfig[count][6]);
+        // switch MIDI control on. [KCCHAN]=channel, [KCPITC]=control, [KCVALU]=value
+        controlChange(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], keyconfig[count][KCVALU]);
       }
-      // keyconfig element [3] contains type of config (C=MIDI Program)
-      else if (keyconfig[count][3] == 'p')
+      // keyconfig element [KCFUNC] contains type of config (C=MIDI Program)
+      else if (keyconfig[count][KCFUNC] == 'p')
       {
-        // switch MIDI program on. [4]=channel, [5]=program, [6]=value
-        programChange(keyconfig[count][4], keyconfig[count][5], keyconfig[count][6]);
+        // switch MIDI program on. [KCCHAN]=channel, [KCPITC]=program, [KCVALU]=value
+        programChange(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], keyconfig[count][KCVALU]);
       }
 #endif
     }
@@ -338,16 +345,16 @@ void keyPressed(char button, char bank) {
 
 void keyReleased(char button, char bank) {
   char count, keycount;
-  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[KCPIN])); count++)
   {
-    if ((button == keyconfig[count][0]) and ((bank == keyconfig[count][1]) or (0 == keyconfig[count][1])))
+    if ((button == keyconfig[count][KCPIN]) and ((bank == keyconfig[count][KCBANK]) or (0 == keyconfig[count][KCBANK])))
     {
 #ifdef DEBUG
       print_debug(count, 'R');
 #endif
 #if KEYBOARD == 1
-      // keyconfig element [3] contains type of config (K=Keyboard)
-      if (keyconfig[count][3] == 'K')
+      // keyconfig element [KCFUNC] contains type of config (K=Keyboard)
+      if (keyconfig[count][KCFUNC] == 'K')
       {
         // loop for 3 keys per pin (start at element 4)
         for (keycount = 4; keycount < sizeof(keyconfig[count]); keycount++)
@@ -362,50 +369,50 @@ void keyReleased(char button, char bank) {
       }
 #endif
 #if MIDIUSB == 1
-      // keyconfig element [3] contains type of config (M=MIDIUSB)
-      if (keyconfig[count][3] == 'M')
+      // keyconfig element [KCFUNC] contains type of config (M=MIDIUSB)
+      if (keyconfig[count][KCFUNC] == 'M')
       {
-        // switch MIDI USB note off. [4]=channel, [5]=pitch, [6]=velocity
-        noteOffUSB(keyconfig[count][4], keyconfig[count][5], keyconfig[count][6]);
+        // switch MIDI USB note off. [KCCHAN]=channel, [KCPITC]=pitch, [KCVALU]=velocity
+        noteOffUSB(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], keyconfig[count][KCVALU]);
       }
 #if MIDICRELEASE == 1
-      // keyconfig element [3] contains type of config (C=MIDI USB Control)
-      else if (keyconfig[count][3] == 'C')
+      // keyconfig element [KCFUNC] contains type of config (C=MIDI USB Control)
+      else if (keyconfig[count][KCFUNC] == 'C')
       {
-        // switch MIDI USB control off. [4]=channel, [5]=control, value 0=off
-        controlChangeUSB(keyconfig[count][4], keyconfig[count][5], 0);
+        // switch MIDI USB control off. [KCCHAN]=channel, [KCPITC]=control, value 0=off
+        controlChangeUSB(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], 0);
       }
 #endif
 #if MIDIPRELEASE == 1
-      // keyconfig element [3] contains type of config (P=MIDI USB Program)
-      else if (keyconfig[count][3] == 'P')
+      // keyconfig element [KCFUNC] contains type of config (P=MIDI USB Program)
+      else if (keyconfig[count][KCFUNC] == 'P')
       {
-        // switch MIDI USB program off. [4]=channel, [5]=control, value 0=off
-        programChangeUSB(keyconfig[count][4], keyconfig[count][5], 0);
+        // switch MIDI USB program off. [KCCHAN]=channel, [KCPITC]=control, value 0=off
+        programChangeUSB(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], 0);
       }
 #endif
 #endif
 #if MIDI == 1
-      // keyconfig element [3] contains type of config (m=MIDI)
-      if (keyconfig[count][3] == 'm')
+      // keyconfig element [KCFUNC] contains type of config (m=MIDI)
+      if (keyconfig[count][KCFUNC] == 'm')
       {
-        // switch MIDI note off. [4]=channel, [5]=pitch, [6]=velocity
-        noteOff(keyconfig[count][4], keyconfig[count][5], keyconfig[count][6]);
+        // switch MIDI note off. [KCCHAN]=channel, [KCPITC]=pitch, [KCVALU]=velocity
+        noteOff(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], keyconfig[count][KCVALU]);
       }
 #if MIDICRELEASE == 1
-      // keyconfig element [3] contains type of config (c=MIDI Control)
-      else if (keyconfig[count][3] == 'c')
+      // keyconfig element [KCFUNC] contains type of config (c=MIDI Control)
+      else if (keyconfig[count][KCFUNC] == 'c')
       {
-        // switch MIDI USB control off. [4]=channel, [5]=control, value 0=off
-        controlChange(keyconfig[count][4], keyconfig[count][5], 0);
+        // switch MIDI USB control off. [KCCHAN]=channel, [KCPITC]=control, value 0=off
+        controlChange(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], 0);
       }
 #endif
 #if MIDIPRELEASE == 1
-      // keyconfig element [3] contains type of config (p=MIDI program)
-      else if (keyconfig[count][3] == 'p')
+      // keyconfig element [KCFUNC] contains type of config (p=MIDI program)
+      else if (keyconfig[count][KCFUNC] == 'p')
       {
-        // switch MIDI USB control off. [4]=channel, [5]=program, value 0=off
-        programChange(keyconfig[count][4], keyconfig[count][5], 0);
+        // switch MIDI USB control off. [KCCHAN]=channel, [KCPITC]=program, value 0=off
+        programChange(keyconfig[count][KCCHAN], keyconfig[count][KCPITC], 0);
       }
 #endif
 #endif
@@ -422,11 +429,11 @@ int cmpfunc (const void * a, const void * b) {
 TrellisCallback blink(keyEvent evt){
   if(evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
     keyPressed(evt.bit.NUM); //on rising
-    trellis.pixels.setPixelColor(evt.bit.NUM, buttonled[evt.bit.NUM][1]);
+    trellis.pixels.setPixelColor(evt.bit.NUM, buttonled[evt.bit.NUM][KCBANK]);
   }
   else if(evt.bit.EDGE == SEESAW_KEYPAD_EDGE_FALLING) {
     keyReleased(evt.bit.NUM); //off falling
-    trellis.pixels.setPixelColor(evt.bit.NUM, buttonled[evt.bit.NUM][0]);
+    trellis.pixels.setPixelColor(evt.bit.NUM, buttonled[evt.bit.NUM][KCPIN]);
   }
   trellis.pixels.show();
   return 0;
@@ -447,21 +454,21 @@ void setup() {
   for (count=0; count < MAXELEMENTS; count++)
   {
 #if PINMODE == 0
-    pinMode(keyconfig[count][0], INPUT_PULLUP);
+    pinMode(keyconfig[count][KCPIN], INPUT_PULLUP);
 #endif
     switchstate[count] = 1;
     inputpins[count] = 255;
   }
-  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[0])); count++)
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[KCPIN])); count++)
   {
-    inputpins[count] = keyconfig[count][0];
+    inputpins[count] = keyconfig[count][KCPIN];
     // get maximum bank number
-    if (keyconfig[count][1] > bank_max)
+    if (keyconfig[count][KCBANK] > bank_max)
     {
-      bank_max = keyconfig[count][1];
+      bank_max = keyconfig[count][KCBANK];
     }
   }
-  qsort(inputpins, (sizeof(keyconfig)/sizeof(keyconfig[0])), sizeof(char), cmpfunc);
+  qsort(inputpins, (sizeof(keyconfig)/sizeof(keyconfig[KCPIN])), sizeof(char), cmpfunc);
 #if KEYBOARD == 1
   // initialize Keyboard and set layout to de_DE
   Keyboard.begin(KeyboardLayout_de_DE);
@@ -488,7 +495,7 @@ void setup() {
     trellis.activateKey(i, SEESAW_KEYPAD_EDGE_RISING);
     trellis.activateKey(i, SEESAW_KEYPAD_EDGE_FALLING);
     trellis.registerCallback(i, blink);
-    trellis.pixels.setPixelColor(i, buttonled[i][0]);
+    trellis.pixels.setPixelColor(i, buttonled[i][KCPIN]);
   }
   delay(10);
   trellis.pixels.show();
@@ -513,19 +520,19 @@ void loop() {
   {
     if ((inputpins[count] != prevpin) && (inputpins[count] != 255))
     {
-      // read current pin state. pin number is stored in element [0]
+      // read current pin state. pin number is stored in element [KCPIN]
       currentswitchstate = digitalRead(inputpins[count]);
       // switch has been pressed, when current state is 0 and was 1 before
       if ((currentswitchstate == 0) and (switchstate[count] == 1))
       {
         // Switch pressed!
         // handling for bank switch
-        if (keyconfig[count][1] == 0)
+        if (keyconfig[count][KCBANK] == 0)
         {
 #ifdef DEBUG
           print_debug(count, 'P');
 #endif
-          if (keyconfig[count][3] == 'b')
+          if (keyconfig[count][KCFUNC] == 'b')
           {
             if (bank_selected > 1)
             {
@@ -536,7 +543,7 @@ void loop() {
               bank_selected = bank_max;
             }
           }
-          else if (keyconfig[count][3] == 'B')
+          else if (keyconfig[count][KCFUNC] == 'B')
           {
             if (bank_selected < bank_max)
             {
