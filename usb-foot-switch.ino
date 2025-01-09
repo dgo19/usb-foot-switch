@@ -10,7 +10,10 @@
 #define MIDI 1
 // Adafuit I2C 7-segment HT16K33 Backpack
 #define SEVENSEG 1
+// Adafruit I2C 7-segment Adress
 #define SEVENSEGADDR 0x70
+// Adafruit I2C 7-segment Brightness 0 (min) to 15 (max)
+#define SEVENSEGBRIGHTNESS 0
 // define delay in global loop
 #define LOOPDELAY 100
 // send MIDI Control Value 0 on release
@@ -505,6 +508,7 @@ void setup() {
 #endif
 #if SEVENSEG == 1
 sevenseg.begin(SEVENSEGADDR);
+sevenseg.setBrightness(SEVENSEGBRIGHTNESS);
 displayBankChange(bank_selected);
 #endif
 #ifdef DEBUG
