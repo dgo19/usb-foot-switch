@@ -48,38 +48,41 @@ Adafruit_7segment sevenseg = Adafruit_7segment();
 #endif
 
 /* Config for keys. Pins can be configured multiple times, to press multiple keys or midi commands
- *  Keyboard { Pin number, bank number, 'K', 'Key1', 'Key2', 'Key3' }
+ *  Keyboard { Pin number, bank number, display value, led pin, 'K', 'Key1', 'Key2', 'Key3' }
  *    set emtpy key fields to 0
- *  MIDI { Pin number, bank number, 'm', MIDI channel, MIDI pitch, MIDI velocity }
- *  MIDI USB { Pin number, bank number, 'M', MIDI channel, MIDI pitch, MIDI velocity }
- *  MIDI Control Change { Pin number, bank number, 'c', control channel, control, value 127 }
- *  MIDI USB Control Change { Pin number, bank number, 'C', control channel, control, value 127 }
- *  MIDI Program Change { Pin number, bank number, 'p', program channel, program, value 127 }
- *  MIDI USB Program Change { Pin number, bank number, 'P', program channel, program, value 127 }
- *  Bank down { Pin number, bank number (has to be 0), 'b', all other values 0 }
- *  Bank up { Pin number, bank number (has to be 0), 'B', all other values 0 }
+ *  MIDI { Pin number, bank number, display value, led pin, 'm', MIDI channel, MIDI pitch, MIDI velocity }
+ *  MIDI USB { Pin number, bank number, display value, led pin, 'M', MIDI channel, MIDI pitch, MIDI velocity }
+ *  MIDI Control Change { Pin number, bank number, display value, led pin, 'c', control channel, control, value 127 }
+ *  MIDI USB Control Change { Pin number, bank number, display value, led pin, 'C', control channel, control, value 127 }
+ *  MIDI Program Change { Pin number, bank number, display value, led pin, 'p', program channel, program, value 127 }
+ *  MIDI USB Program Change { Pin number, bank number, display value, led pin, 'P', program channel, program, value 127 }
+ *  Bank down { Pin number, bank number (has to be 0), display value, led pin, 'b', all other values 0 }
+ *  Bank up { Pin number, bank number (has to be 0), display value, led pin, 'B', all other values 0 }
+ *
+ *  LED pin defines LED for switch; 0 disables led
  */
 
-static char keyconfig[][7] = {{4, 1, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Display 1, Keyboard, press KEY_UP_ARROW
-                              {5, 1, 2, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 3, Bank 1, Display 2, Keyboard, press KEY_DOWN_ARROW
-                              {4, 2, 0, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Display 1, Keyboard, press +
-                              {5, 2, 0, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Display 2, Keyboard, press -
-                              {4, 3, 1, 'M', 0, 48, 64},            // Switch Pin 2, Bank 3, Display 1, MIDI USB Note Channel 1, middle C, normal velocity
-                              {5, 3, 2, 'm', 0, 48, 64},            // Switch Pin 3, Bank 4, Display 2, MIDI Note Channel 1, middle C, normal velocity
-                              {4, 4, 1, 'C', 1, 20, 127},           // Switch Pin 3, Bank 3, Display 1, MIDI USB Control Channel 2, Control 20, Value 127
-                              {5, 4, 2, 'c', 1, 20, 127},           // Switch Pin 2, Bank 5, Display 2, MIDI Control Channel 2, Control 20, Value 127
-                              {4, 5, 1, 'P', 1, 20, 127},           // Switch Pin 2, Bank 4, Display 1, MIDI USB Program Change Channel 3, Control 40, Value 127
-                              {5, 5, 2, 'p', 1, 20, 127},           // Switch Pin 3, Bank 5, Display 2, MIDI Program Change Channel 2, Control 20, Value 127
-                              {6, 0, 0, 'b', 0, 0, 0},              // Switch Pin 4, Bank 0 (has to be 0), Display 0 (has to be 0), Bank down
-                              {7, 0, 0, 'B', 0, 0, 0}               // Switch Pin 5, Bank 0 (has to be 0), Display 0 (has to be 0), Bank up
+static char keyconfig[][8] = {{4, 1, 1, 0, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Display 1, LED disabled, Keyboard, press KEY_UP_ARROW
+                              {5, 1, 2, 0, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 3, Bank 1, Display 2, LED disabled, Keyboard, press KEY_DOWN_ARROW
+                              {4, 2, 0, 0, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Display 1, LED disabled, Keyboard, press +
+                              {5, 2, 0, 0, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Display 2, LED disabled, Keyboard, press -
+                              {4, 3, 1, 0, 'M', 0, 48, 64},            // Switch Pin 2, Bank 3, Display 1, LED disabled, MIDI USB Note Channel 1, middle C, normal velocity
+                              {5, 3, 2, 0, 'm', 0, 48, 64},            // Switch Pin 3, Bank 4, Display 2, LED disabled, MIDI Note Channel 1, middle C, normal velocity
+                              {4, 4, 1, 0, 'C', 1, 20, 127},           // Switch Pin 3, Bank 3, Display 1, LED disabled, MIDI USB Control Channel 2, Control 20, Value 127
+                              {5, 4, 2, 0, 'c', 1, 20, 127},           // Switch Pin 2, Bank 5, Display 2, LED disabled, MIDI Control Channel 2, Control 20, Value 127
+                              {4, 5, 1, 0, 'P', 1, 20, 127},           // Switch Pin 2, Bank 4, Display 1, LED disabled, MIDI USB Program Change Channel 3, Control 40, Value 127
+                              {5, 5, 2, 0, 'p', 1, 20, 127},           // Switch Pin 3, Bank 5, Display 2, LED disabled, MIDI Program Change Channel 2, Control 20, Value 127
+                              {6, 0, 0, 0, 'b', 0, 0, 0},              // Switch Pin 4, Bank 0 (has to be 0), Display 0 (has to be 0), LED disabled, Bank down
+                              {7, 0, 0, 0, 'B', 0, 0, 0}               // Switch Pin 5, Bank 0 (has to be 0), Display 0 (has to be 0), LED disabled, Bank up
                              };
 #define KCPIN 0
 #define KCBANK 1
 #define KCDISP 2
-#define KCFUNC 3
-#define KCCHAN 4
-#define KCPITC 5
-#define KCVALU 6
+#define KCLED 3
+#define KCFUNC 4
+#define KCCHAN 5
+#define KCPITC 6
+#define KCVALU 7
 
 unsigned char switchstate[MAXELEMENTS];
 unsigned char inputpins[MAXELEMENTS];
@@ -242,6 +245,8 @@ void print_debug(char keyconfignum, char state) {
   Serial.print(keyconfig[keyconfignum][KCBANK], DEC);
   Serial.print(" Display: ");
   Serial.print(keyconfig[keyconfignum][KCDISP], DEC);
+  Serial.print(" LED Pin: ");
+  Serial.print(keyconfig[keyconfignum][KCLED], DEC);
   Serial.print(" Type: ");
   Serial.print(keyconfig[keyconfignum][KCFUNC]);
   switch(keyconfig[keyconfignum][KCFUNC])
@@ -286,6 +291,10 @@ void keyPressed(char button, char bank) {
   char count, keycount;
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[KCPIN])); count++)
   {
+    if (keyconfig[count][KCLED] != 0)
+    {
+      digitalWrite(keyconfig[count][KCLED], LOW);
+    }
     if ((button == keyconfig[count][KCPIN]) and ((bank == keyconfig[count][KCBANK]) or (0 == keyconfig[count][KCBANK])))
     {
 #ifdef DEBUG
@@ -293,6 +302,10 @@ void keyPressed(char button, char bank) {
 #endif
       if (keyconfig[count][KCBANK] != 0) {
         displayKeyPress(keyconfig[count][KCDISP]);
+      }
+      if (keyconfig[count][KCLED] != 0)
+      {
+        digitalWrite(keyconfig[count][KCLED], LOW);
       }
         // handling for bank switch
         if (keyconfig[count][KCBANK] == 0)
@@ -495,14 +508,18 @@ void setup() {
   // set pins to input and enable internal pullup; init switch state; init inputpins
   for (count=0; count < MAXELEMENTS; count++)
   {
-#if PINMODE == 0
-    pinMode(keyconfig[count][KCPIN], INPUT_PULLUP);
-#endif
     switchstate[count] = 1;
     inputpins[count] = 255;
   }
   for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[KCPIN])); count++)
   {
+#if PINMODE == 0
+    pinMode(keyconfig[count][KCPIN], INPUT_PULLUP);
+#endif
+    if (keyconfig[count][KCLED] != 0)
+    {
+      pinMode(keyconfig[count][KCLED], OUTPUT);
+    }
     inputpins[count] = keyconfig[count][KCPIN];
     // get maximum bank number
     if (keyconfig[count][KCBANK] > bank_max)
