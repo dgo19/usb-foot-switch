@@ -62,7 +62,7 @@ Adafruit_7segment sevenseg = Adafruit_7segment();
  *  LED pin defines LED for switch; 0 disables led
  */
 
-static char keyconfig[][8] = {{4, 1, 1, 0, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Display 1, LED disabled, Keyboard, press KEY_UP_ARROW
+static char keyconfig[][8] = {{4, 1, 1, 18, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Display 1, LED disabled, Keyboard, press KEY_UP_ARROW
                               {5, 1, 2, 0, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 3, Bank 1, Display 2, LED disabled, Keyboard, press KEY_DOWN_ARROW
                               {4, 2, 0, 0, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Display 1, LED disabled, Keyboard, press +
                               {5, 2, 0, 0, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Display 2, LED disabled, Keyboard, press -
@@ -293,6 +293,10 @@ void keyPressed(char button, char bank) {
   {
     if (keyconfig[count][KCLED] != 0)
     {
+#ifdef DEBUG
+      Serial.print("LED off: Pin ");
+      Serial.println(keyconfig[count][KCLED], DEC);
+#endif
       digitalWrite(keyconfig[count][KCLED], LOW);
     }
     if ((button == keyconfig[count][KCPIN]) and ((bank == keyconfig[count][KCBANK]) or (0 == keyconfig[count][KCBANK])))
@@ -305,7 +309,11 @@ void keyPressed(char button, char bank) {
       }
       if (keyconfig[count][KCLED] != 0)
       {
-        digitalWrite(keyconfig[count][KCLED], LOW);
+#ifdef DEBUG
+      Serial.print("LED on: Pin ");
+      Serial.println(keyconfig[count][KCLED], DEC);
+#endif
+        digitalWrite(keyconfig[count][KCLED], HIGH);
       }
         // handling for bank switch
         if (keyconfig[count][KCBANK] == 0)
@@ -347,8 +355,8 @@ void keyPressed(char button, char bank) {
       // keyconfig element [KCFUNC] contains type of config (K=Keyboard)
       if (keyconfig[count][KCFUNC] == 'K')
       {
-        // loop for 3 keys per pin (start at element 4)
-        for (keycount = 4; keycount < sizeof(keyconfig[count]); keycount++)
+        // loop for 3 keys per pin (start at element KCCHAN)
+        for (keycount = KCCHAN; keycount < sizeof(keyconfig[count]); keycount++)
         {
           // key is configured, when its not 0
           if (keyconfig[count][keycount] != 0)
