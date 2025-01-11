@@ -62,15 +62,15 @@ Adafruit_7segment sevenseg = Adafruit_7segment();
  *  LED pin defines LED for switch; 0 disables led
  */
 
-static char keyconfig[][8] = {{4, 1, 1, 18, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pin 2, Bank 1, Display 1, LED disabled, Keyboard, press KEY_UP_ARROW
+static char keyconfig[][8] = {{4, 1, 1, 18, 'K', KEY_UP_ARROW, 0, 0},  // Switch Pin 2, Bank 1, Display 1, LED disabled, Keyboard, press KEY_UP_ARROW
                               {5, 1, 2, 0, 'K', KEY_DOWN_ARROW, 0, 0}, // Switch Pin 3, Bank 1, Display 2, LED disabled, Keyboard, press KEY_DOWN_ARROW
-                              {4, 2, 0, 0, 'K', '+', 0, 0},            // Switch Pin 2, Bank 2, Display 1, LED disabled, Keyboard, press +
+                              {4, 2, 0, 18, 'K', '+', 0, 0},           // Switch Pin 2, Bank 2, Display 1, LED disabled, Keyboard, press +
                               {5, 2, 0, 0, 'K', '-', 0, 0},            // Switch Pin 3, Bank 2, Display 2, LED disabled, Keyboard, press -
-                              {4, 3, 1, 0, 'M', 0, 48, 64},            // Switch Pin 2, Bank 3, Display 1, LED disabled, MIDI USB Note Channel 1, middle C, normal velocity
+                              {4, 3, 1, 18, 'M', 0, 48, 64},           // Switch Pin 2, Bank 3, Display 1, LED disabled, MIDI USB Note Channel 1, middle C, normal velocity
                               {5, 3, 2, 0, 'm', 0, 48, 64},            // Switch Pin 3, Bank 4, Display 2, LED disabled, MIDI Note Channel 1, middle C, normal velocity
-                              {4, 4, 1, 0, 'C', 1, 20, 127},           // Switch Pin 3, Bank 3, Display 1, LED disabled, MIDI USB Control Channel 2, Control 20, Value 127
+                              {4, 4, 1, 18, 'C', 1, 20, 127},          // Switch Pin 3, Bank 3, Display 1, LED disabled, MIDI USB Control Channel 2, Control 20, Value 127
                               {5, 4, 2, 0, 'c', 1, 20, 127},           // Switch Pin 2, Bank 5, Display 2, LED disabled, MIDI Control Channel 2, Control 20, Value 127
-                              {4, 5, 1, 0, 'P', 1, 20, 127},           // Switch Pin 2, Bank 4, Display 1, LED disabled, MIDI USB Program Change Channel 3, Control 40, Value 127
+                              {4, 5, 1, 18, 'P', 1, 20, 127},          // Switch Pin 2, Bank 4, Display 1, LED disabled, MIDI USB Program Change Channel 3, Control 40, Value 127
                               {5, 5, 2, 0, 'p', 1, 20, 127},           // Switch Pin 3, Bank 5, Display 2, LED disabled, MIDI Program Change Channel 2, Control 20, Value 127
                               {6, 0, 0, 0, 'b', 0, 0, 0},              // Switch Pin 4, Bank 0 (has to be 0), Display 0 (has to be 0), LED disabled, Bank down
                               {7, 0, 0, 0, 'B', 0, 0, 0}               // Switch Pin 5, Bank 0 (has to be 0), Display 0 (has to be 0), LED disabled, Bank up
@@ -299,6 +299,9 @@ void keyPressed(char button, char bank) {
 #endif
       digitalWrite(keyconfig[count][KCLED], LOW);
     }
+  }
+  for (count=0; count < (sizeof(keyconfig)/sizeof(keyconfig[KCPIN])); count++)
+  {
     if ((button == keyconfig[count][KCPIN]) and ((bank == keyconfig[count][KCBANK]) or (0 == keyconfig[count][KCBANK])))
     {
 #ifdef DEBUG
