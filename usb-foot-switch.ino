@@ -81,6 +81,11 @@ static char keyconfig[][7] = {{4, 1, 1, 'K', KEY_UP_ARROW, 0, 0},   // Switch Pi
 #define KCPITC 5
 #define KCVALU 6
 
+unsigned char switchstate[MAXELEMENTS];
+unsigned char inputpins[MAXELEMENTS];
+char bank_max = 1;
+char bank_selected = 1;
+
 /* Config for NeoTrellis LED buttons (only usable in PINMODE 1)
  *  Button { idle 0xRRGGBB, pressed 0xRRGGBB}
  *  Colors: 0..255
@@ -289,6 +294,42 @@ void keyPressed(char button, char bank) {
       if (keyconfig[count][KCBANK] != 0) {
         displayKeyPress(keyconfig[count][KCDISP]);
       }
+        // handling for bank switch
+        if (keyconfig[count][KCBANK] == 0)
+        {
+          if (keyconfig[count][KCFUNC] == 'b')
+          {
+            if (bank_selected > 1)
+            {
+              bank_selected--;
+            }
+            else
+            {
+              bank_selected = bank_max;
+            }
+            displayBankChange(bank_selected);
+#ifdef DEBUG
+            Serial.print("Bank changed to ");
+            Serial.println(bank_selected, DEC);
+#endif
+          }
+          else if (keyconfig[count][KCFUNC] == 'B')
+          {
+            if (bank_selected < bank_max)
+            {
+              bank_selected++;
+            }
+            else
+            {
+              bank_selected = 1;
+            }
+            displayBankChange(bank_selected);
+#ifdef DEBUG
+            Serial.print("Bank changed to ");
+            Serial.println(bank_selected, DEC);
+#endif
+          }
+        }
 #if KEYBOARD == 1
       // keyconfig element [KCFUNC] contains type of config (K=Keyboard)
       if (keyconfig[count][KCFUNC] == 'K')
@@ -446,11 +487,6 @@ TrellisCallback blink(keyEvent evt){
 }
 #endif
 
-unsigned char switchstate[MAXELEMENTS];
-unsigned char inputpins[MAXELEMENTS];
-char bank_max = 1;
-char bank_selected = 1;
-
 void setup() {
   char count;
 #ifdef DEBUG
@@ -533,45 +569,7 @@ void loop() {
       if ((currentswitchstate == 0) and (switchstate[count] == 1))
       {
         // Switch pressed!
-        // handling for bank switch
-        if (keyconfig[count][KCBANK] == 0)
-        {
-#ifdef DEBUG
-          print_debug(count, 'P');
-#endif
-          if (keyconfig[count][KCFUNC] == 'b')
-          {
-            if (bank_selected > 1)
-            {
-              bank_selected--;
-            }
-            else
-            {
-              bank_selected = bank_max;
-            }
-            displayBankChange(bank_selected);
-#ifdef DEBUG
-            Serial.print("Bank changed to ");
-            Serial.println(bank_selected, DEC);
-#endif
-          }
-          else if (keyconfig[count][KCFUNC] == 'B')
-          {
-            if (bank_selected < bank_max)
-            {
-              bank_selected++;
-            }
-            else
-            {
-              bank_selected = 1;
-            }
-            displayBankChange(bank_selected);
-#ifdef DEBUG
-            Serial.print("Bank changed to ");
-            Serial.println(bank_selected, DEC);
-#endif
-          }
-        }
+
         keyPressed(inputpins[count],bank_selected);
       }
       // switch has been released, when current state is 1 and was 0 before
